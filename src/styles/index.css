@@ -1,0 +1,28 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-voucher, .printable-voucher * {
+    visibility: visible;
+  }
+  .printable-voucher {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+@media print {
+  body * { visibility: hidden; }
+  .report-container, .report-container * { visibility: visible; }
+  .report-container { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; overflow: visible !important; }
+  .no-print { display: none !important; }
+  .only-print { display: block !important; }
+  .print-content { overflow: visible !important; height: auto !important; padding: 0 !important; }
+  @page { size: A4; margin: 10mm; }
+}
