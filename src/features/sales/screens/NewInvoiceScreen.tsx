@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { SelectCustomerSheet } from "../components/SelectCustomerSheet";
+import { ContactFormSheet } from "@/features/crm/components/ContactFormSheet";
 import { ProductSelector } from "../components/ProductSelector";
 import { buildCartLine, nextInvoiceNumber, MOCK_SALES_INVOICES } from "@/core/data/salesMockData";
 import { MOCK_BUSINESS } from "@/core/data/mockData";
@@ -29,6 +30,8 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
 
   const [step, setStep] = useState<Step>("build");
   const [showCustomer, setShowCustomer] = useState(false);
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [payMethod, setPayMethod] = useState<PaymentMethodType>("Cash");
@@ -87,85 +90,225 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
           </div>
         </div>
         {/* Customer picker in header */}
-        <button onClick={() => setShowCustomer(true)} style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 12, padding: "10px 16px", cursor: "pointer", fontFamily: "inherit" }}>
-          <User size={18} color="white" />
-          <div style={{ textAlign: isRTL ? "right" : "left" }}>
-            <div style={{ color: "white", fontSize: 14, fontWeight: 700 }}>{customer ? customer.customer_name : t.walkInCustomer}</div>
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11 }}>{customer?.phone ?? t.selectCustomer}</div>
-          </div>
-          <ChevronDown size={16} color="rgba(255,255,255,0.7)" />
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, height: 46 }}>
+          <button onClick={() => setShowCustomer(true)} style={{ height: "100%", display: "flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 12, padding: "0 16px", cursor: "pointer", fontFamily: "inherit" }}>
+            <User size={18} color="white" />
+            <div style={{ textAlign: isRTL ? "right" : "left", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <div style={{ color: "white", fontSize: 13, fontWeight: 700 }}>{customer ? customer.customer_name : (isRTL ? "اختر العميل" : "Select Customer")}</div>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 11, marginTop: 2 }}>{customer ? (customer.phone ?? (isRTL ? "بدون رقم" : "No Phone")) : (isRTL ? "اضغط للاختيار" : "Click to select")}</div>
+            </div>
+            <ChevronDown size={16} color="rgba(255,255,255,0.7)" style={{ marginInlineStart: 8 }} />
+          </button>
+          
+          <button onClick={() => setShowNewCustomer(true)} title={isRTL ? "إضافة عميل" : "New Customer"} style={{ height: "100%", padding: "0 14px", display: "flex", alignItems: "center", gap: 6, justifyContent: "center", background: "linear-gradient(135deg, #10B981, #059669)", border: "none", borderRadius: 12, cursor: "pointer", boxShadow: "0 4px 12px rgba(16,185,129,0.3)" }}>
+            <Plus size={18} color="white" strokeWidth={3} />
+            <span style={{ color: "white", fontSize: 13, fontWeight: 700 }}>{isRTL ? "إضافة عميل" : "New"}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Two-column body */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden", gap: 0 }}>
-
-        {/* LEFT: Products */}
-        <div style={{ flex: "1 1 0", minWidth: 0, overflow: "hidden", borderInlineEnd: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+      {/* Body: Full Screen Products */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+        
+        {/* Products Area (100% width) */}
+        <div style={{ flex: 1, minWidth: 0, overflow: "hidden", paddingBottom: 190 }}>
           <ProductSelector cart={cart} products={products} onAddItem={addItem} onUpdateQty={updateQty} onRemove={removeItem} />
         </div>
 
-        {/* RIGHT: Cart panel */}
-        <div style={{ width: 320, flexShrink: 0, display: "flex", flexDirection: "column", background: surface }}>
-          {/* Cart header */}
-          <div style={{ padding: "16px 20px", borderBottom: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <ShoppingCart size={20} color="#2563EB" />
-              <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>{isRTL ? "الفاتورة" : "Cart"}</span>
-            </div>
-            <div style={{ background: "#2563EB", color: "white", fontSize: 12, fontWeight: 800, width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>{totalItems}</div>
-          </div>
-
-          {/* Cart items */}
-          <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
-            {cart.length === 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: ds.textMuted, textAlign: "center", gap: 12 }}>
-                <ShoppingCart size={40} color={ds.textMuted} strokeWidth={1} />
-                <p style={{ fontSize: 14, fontWeight: 500 }}>{isRTL ? "لم تتم إضافة أي منتجات بعد" : "No items added yet"}</p>
-              </div>
-            ) : (
-              cart.map(item => (
-                <div key={item.product_unit.id} style={{ marginBottom: 10, background: isDark ? ds.surface2 : "#F8FAFC", borderRadius: 12, padding: "10px 12px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                    <div style={{ color: ds.textPrimary, fontSize: 13, fontWeight: 700, flex: 1, marginInlineEnd: 8, lineHeight: 1.3 }}>{item.product_unit.sku}</div>
-                    <button onClick={() => removeItem(item.product_unit.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}><Trash2 size={14} color="#EF4444" /></button>
+        {/* Floating Smart Cart Bar */}
+        <div style={{ position: "absolute", bottom: 120, left: 24, right: 24, display: "flex", justifyContent: "center", zIndex: 40, pointerEvents: "none" }}>
+          <motion.div 
+            initial={{ y: 50, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }}
+            style={{ 
+              background: isDark ? "rgba(12, 25, 41, 0.95)" : "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
+              borderRadius: 24,
+              padding: 8,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+              width: "100%",
+              maxWidth: 600,
+              pointerEvents: "auto",
+              cursor: "pointer"
+            }}
+            onClick={(e) => {
+              // Prevent opening drawer if they clicked the pay button
+              if ((e.target as HTMLElement).closest('#pay-btn')) return;
+              setShowCartDrawer(true);
+            }}
+          >
+            {/* Left side: Cart Info */}
+            <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 16px" }}>
+              <div style={{ position: "relative" }}>
+                <ShoppingCart size={24} color={ds.textPrimary} />
+                {totalItems > 0 && (
+                  <div style={{ position: "absolute", top: -8, right: -8, background: "#EF4444", color: "white", fontSize: 11, fontWeight: 800, width: 20, height: 20, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${isDark ? "#0C1929" : "#FFF"}` }}>
+                    {totalItems}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: surface, borderRadius: 8, padding: 3, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
-                      <button onClick={() => updateQty(item.product_unit.id, -1)} style={{ width: 28, height: 28, borderRadius: 6, background: isDark ? ds.surface : "#F1F5F9", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={13} strokeWidth={2.5} color={ds.textPrimary} /></button>
-                      <span style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 800, minWidth: 20, textAlign: "center" }}>{item.quantity}</span>
-                      <button onClick={() => updateQty(item.product_unit.id, 1)} style={{ width: 28, height: 28, borderRadius: 6, background: "#2563EB", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={13} strokeWidth={2.5} color="white" /></button>
-                    </div>
-                    <span style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 800 }}>{item.line_total.toLocaleString()} <span style={{ fontSize: 11, color: ds.textMuted }}>{currency}</span></span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Total & checkout */}
-          <div style={{ padding: "16px 20px 90px 20px", borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}` }}>
-            {[{ l: t.invoiceSubtotal, v: totals.subtotal }, ...(totals.tax_amount > 0 ? [{ l: t.invoiceTax, v: totals.tax_amount }] : [])].map((r, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ color: ds.textSecondary, fontSize: 13 }}>{r.l}</span>
-                <span style={{ color: ds.textPrimary, fontSize: 13, fontWeight: 600 }}>{r.v.toLocaleString()}</span>
+                )}
               </div>
-            ))}
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, paddingTop: 10, borderTop: `2px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
-              <span style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>{t.invoiceGrandTotal}</span>
-              <span style={{ color: "#2563EB", fontSize: 22, fontWeight: 900 }}>{totals.total_amount.toLocaleString()} {currency}</span>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600 }}>{isRTL ? "إجمالي السلة" : "Cart Total"}</span>
+                <span style={{ color: ds.primary, fontSize: 18, fontWeight: 800 }}>{totals.total_amount.toLocaleString()} <span style={{ fontSize: 12 }}>{currency}</span></span>
+              </div>
             </div>
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => cart.length > 0 && setStep("payment")}
-              style={{ width: "100%", height: 52, background: cart.length === 0 ? (isDark ? ds.surface2 : "#E2E8F0") : "linear-gradient(135deg,#1D4ED8,#2563EB)", border: "none", borderRadius: 14, color: cart.length === 0 ? ds.textMuted : "white", fontSize: 16, fontWeight: 800, cursor: cart.length === 0 ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: cart.length > 0 ? "0 8px 24px rgba(37,99,235,0.3)" : "none" }}>
-              <ShoppingCart size={22} color={cart.length === 0 ? ds.textMuted : "white"} />
-              {t.confirmPayment}
-            </motion.button>
-          </div>
+
+            {/* Right side: Pay Button */}
+            <button 
+              id="pay-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (cart.length > 0) setStep("payment");
+              }}
+              style={{
+                background: cart.length === 0 ? (isDark ? ds.surface2 : "#E2E8F0") : "linear-gradient(135deg,#1D4ED8,#2563EB)",
+                border: "none",
+                borderRadius: 16,
+                padding: "0 32px",
+                height: 52,
+                color: cart.length === 0 ? ds.textMuted : "white",
+                fontSize: 16,
+                fontWeight: 800,
+                cursor: cart.length === 0 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                transition: "all 0.2s"
+              }}
+            >
+              <CreditCard size={20} />
+              {isRTL ? "الدفع السريع" : "Pay Now"}
+            </button>
+          </motion.div>
         </div>
+
+        {/* Side Drawer for Cart */}
+        <AnimatePresence>
+          {showCartDrawer && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                onClick={() => setShowCartDrawer(false)}
+                style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", zIndex: 50 }} 
+              />
+              
+              {/* Drawer */}
+              <motion.div
+                initial={{ x: isRTL ? "-100%" : "100%" }} 
+                animate={{ x: 0 }} 
+                exit={{ x: isRTL ? "-100%" : "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  [isRTL ? "left" : "right"]: 0,
+                  width: "100%",
+                  maxWidth: 400,
+                  background: surface,
+                  zIndex: 60,
+                  display: "flex",
+                  flexDirection: "column",
+                  boxShadow: isRTL ? "10px 0 30px rgba(0,0,0,0.2)" : "-10px 0 30px rgba(0,0,0,0.2)",
+                  borderInlineStart: `1px solid ${isDark ? ds.border : "#E2E8F0"}`
+                }}
+              >
+                {/* Header */}
+                <div style={{ padding: "20px 24px", borderBottom: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <ShoppingCart size={22} color="#2563EB" />
+                    <span style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>{isRTL ? "مراجعة السلة" : "Review Cart"}</span>
+                    <div style={{ background: "#2563EB", color: "white", fontSize: 12, fontWeight: 800, padding: "2px 8px", borderRadius: 12 }}>{totalItems}</div>
+                  </div>
+                  <button onClick={() => setShowCartDrawer(false)} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 36, height: 36, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <X size={18} color={ds.textPrimary} />
+                  </button>
+                </div>
+
+                {/* Items */}
+                <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+                  {cart.length === 0 ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyItems: "center", height: "100%", justifyContent: "center", color: ds.textMuted, gap: 16 }}>
+                      <ShoppingCart size={48} color={ds.textMuted} strokeWidth={1} />
+                      <p style={{ fontSize: 15, fontWeight: 600 }}>{isRTL ? "السلة فارغة حالياً" : "Cart is empty"}</p>
+                    </div>
+                  ) : (
+                    cart.map(item => (
+                      <div key={item.product_unit.id} style={{ marginBottom: 12, background: isDark ? ds.surface2 : "#F8FAFC", borderRadius: 16, padding: "16px", border: `1px solid ${isDark ? ds.border : "#F1F5F9"}` }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                          <div style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700, flex: 1, marginInlineEnd: 12, lineHeight: 1.4 }}>{item.product_unit.sku}</div>
+                          <button onClick={() => removeItem(item.product_unit.id)} style={{ background: "rgba(239, 68, 68, 0.1)", border: "none", borderRadius: 8, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#EF4444" }}><Trash2 size={14} /></button>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, background: surface, borderRadius: 10, padding: 4, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+                            <button onClick={() => updateQty(item.product_unit.id, -1)} style={{ width: 32, height: 32, borderRadius: 8, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={14} strokeWidth={2.5} color={ds.textPrimary} /></button>
+                            <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800, minWidth: 24, textAlign: "center" }}>{item.quantity}</span>
+                            <button onClick={() => updateQty(item.product_unit.id, 1)} style={{ width: 32, height: 32, borderRadius: 8, background: "#2563EB", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={14} strokeWidth={2.5} color="white" /></button>
+                          </div>
+                          <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 900 }}>{item.line_total.toLocaleString()} <span style={{ fontSize: 11, color: ds.textMuted }}>{currency}</span></span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Drawer Footer (Totals & Pay) */}
+                <div style={{ padding: "20px 24px 32px 24px", background: isDark ? ds.surface2 : "#F8FAFC", borderTop: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+                  {[{ l: t.invoiceSubtotal, v: totals.subtotal }, ...(totals.tax_amount > 0 ? [{ l: t.invoiceTax, v: totals.tax_amount }] : [])].map((r, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                      <span style={{ color: ds.textSecondary, fontSize: 14 }}>{r.l}</span>
+                      <span style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700 }}>{r.v.toLocaleString()}</span>
+                    </div>
+                  ))}
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, paddingTop: 12, borderTop: `2px dashed ${isDark ? ds.border : "#CBD5E1"}` }}>
+                    <span style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 900 }}>{t.invoiceGrandTotal}</span>
+                    <span style={{ color: "#2563EB", fontSize: 24, fontWeight: 900 }}>{totals.total_amount.toLocaleString()} {currency}</span>
+                  </div>
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => cart.length > 0 && setStep("payment")}
+                    style={{ width: "100%", height: 56, background: cart.length === 0 ? (isDark ? ds.surface : "#E2E8F0") : "linear-gradient(135deg,#1D4ED8,#2563EB)", border: "none", borderRadius: 16, color: cart.length === 0 ? ds.textMuted : "white", fontSize: 17, fontWeight: 800, cursor: cart.length === 0 ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, boxShadow: cart.length > 0 ? "0 8px 24px rgba(37,99,235,0.3)" : "none" }}>
+                    <CreditCard size={22} color={cart.length === 0 ? ds.textMuted : "white"} />
+                    {t.confirmPayment}
+                  </motion.button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       <AnimatePresence>
         {showCustomer && <SelectCustomerSheet customers={customers} selected={customer} onSelect={setCustomer} onClose={() => setShowCustomer(false)} />}
+        {showNewCustomer && (
+          <ContactFormSheet 
+            role="customer"
+            onClose={() => setShowNewCustomer(false)}
+            onSave={(newCust) => {
+              const fullCustomer = {
+                id: `cust_${Date.now()}`,
+                business_id: "biz_001",
+                customer_type: "Individual" as const,
+                customer_name: newCust.customer_name || "",
+                phone: newCust.phone || null,
+                email: newCust.email || null,
+                tax_number: newCust.tax_number || null,
+                credit_limit: newCust.credit_limit || 0,
+                opening_balance: newCust.opening_balance || 0,
+                is_active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+              setCustomer(fullCustomer as Customer);
+              setShowNewCustomer(false);
+            }}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
@@ -186,12 +329,16 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
           <div style={{ background: surface, borderRadius: 20, padding: 24, marginBottom: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
             <p style={{ color: ds.textMuted, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 16 }}>{t.invoiceSummary}</p>
             <p style={{ color: ds.textSecondary, fontSize: 13, marginBottom: 8 }}>{invoiceNumber}</p>
-            {cart.map(i => (
-              <div key={i.product_unit.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 14 }}>
-                <span style={{ color: ds.textSecondary }}>{i.product_unit.sku} × {i.quantity}</span>
-                <span style={{ color: ds.textPrimary, fontWeight: 600 }}>{i.line_total.toLocaleString()}</span>
-              </div>
-            ))}
+            {cart.map(i => {
+              const p = products?.find(p => p.id === i.product_unit.product_id);
+              const productName = p ? p.product_name : i.product_unit.sku;
+              return (
+                <div key={i.product_unit.id} style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, fontSize: 14 }}>
+                  <span style={{ color: ds.textSecondary, flex: 1, paddingInlineEnd: 12, lineHeight: 1.4 }}>{productName} × {i.quantity}</span>
+                  <span style={{ color: ds.textPrimary, fontWeight: 700 }}>{i.line_total.toLocaleString()}</span>
+                </div>
+              );
+            })}
             <div style={{ borderTop: `2px solid ${isDark ? ds.border : "#E2E8F0"}`, paddingTop: 12, marginTop: 8, display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>{t.invoiceGrandTotal}</span>
               <span style={{ color: "#2563EB", fontSize: 22, fontWeight: 900 }}>{totals.total_amount.toLocaleString()} {currency}</span>
@@ -233,7 +380,7 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
             </div>
           </div>
 
-          <div style={{ padding: "16px 20px 90px 20px", borderTop: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", gap: 10 }}>
+          <div style={{ padding: "16px 20px 140px 20px", borderTop: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", gap: 10 }}>
             <button onClick={() => setStep("build")} style={{ flex: 1, height: 50, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 13, color: ds.textSecondary, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{t.saveAsDraft}</button>
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => setStep("success")}
               style={{ flex: 2, height: 50, background: "linear-gradient(135deg,#16A34A,#22C55E)", border: "none", borderRadius: 13, color: "white", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 20px rgba(22,163,74,0.3)" }}>

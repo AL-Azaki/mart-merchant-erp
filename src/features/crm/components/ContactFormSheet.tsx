@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { X, Check, User, Phone, Mail, MapPin, CreditCard } from "lucide-react";
+import { X, Check, User, Phone, MapPin, CreditCard } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import type { Customer } from "@/core/types/sales";
 
@@ -80,8 +81,8 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
     ? (isRTL ? "تعديل بيانات العميل" : "Edit Customer")
     : (isRTL ? "إضافة عميل جديد" : "Add New Customer");
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+  const modalContent = (
+    <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       {/* Backdrop */}
       <motion.div 
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -123,15 +124,11 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
             <InputWrapper label={isRTL ? "رقم الهاتف" : "Phone Number"} icon={Phone} isFocused={focusedInput === "phone"} isRTL={isRTL} ds={ds}>
               <input type="tel" name="phone" value={formData.phone} onChange={handleChange} onFocus={() => setFocusedInput("phone")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("phone"), direction: "ltr" }} placeholder="+967..." />
             </InputWrapper>
-            
-            <InputWrapper label={isRTL ? "البريد الإلكتروني" : "Email"} icon={Mail} isFocused={focusedInput === "email"} isRTL={isRTL} ds={ds}>
-              <input type="email" name="email" value={formData.email} onChange={handleChange} onFocus={() => setFocusedInput("email")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("email"), direction: "ltr" }} placeholder="example@mail.com" />
+          
+            <InputWrapper label={isRTL ? "العنوان" : "Address"} icon={MapPin} isFocused={focusedInput === "address"} isRTL={isRTL} ds={ds}>
+              <input name="address" value={formData.address} onChange={handleChange} onFocus={() => setFocusedInput("address")} onBlur={() => setFocusedInput(null)} style={getInputStyle("address")} placeholder={isRTL ? "المدينة، الشارع" : "City, Street"} />
             </InputWrapper>
           </div>
-          
-          <InputWrapper label={isRTL ? "العنوان" : "Address"} icon={MapPin} isFocused={focusedInput === "address"} isRTL={isRTL} ds={ds}>
-            <input name="address" value={formData.address} onChange={handleChange} onFocus={() => setFocusedInput("address")} onBlur={() => setFocusedInput(null)} style={getInputStyle("address")} placeholder={isRTL ? "المدينة، الشارع" : "City, Street"} />
-          </InputWrapper>
         </div>
 
         {/* Financial Info */}
@@ -159,4 +156,6 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
     </motion.div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  ArrowRight, ArrowLeft, Search, Plus, Trash2, Check, Package, FileText, ShoppingBag, Database
+  ArrowRight, ArrowLeft, Search, Plus, Trash2, Check, Package, FileText, ShoppingBag, Database, X, CreditCard
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { MOCK_PRODUCTS, MOCK_PRODUCT_UNITS, MOCK_INVENTORIES, MOCK_UNITS, MOCK_CATEGORIES } from "@/core/data/salesMockData";
@@ -18,6 +18,7 @@ export function NewPurchaseScreen({ suppliers, products = [], onBack, onSave }: 
   const [cat, setCat] = useState<string | null>(null);
   const [invoiceRef, setInvoiceRef] = useState("");
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>(suppliers[0]?.id || "");
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
 
   // Map units to view models
   const allUnits = products.flatMap(p => {
@@ -107,9 +108,11 @@ export function NewPurchaseScreen({ suppliers, products = [], onBack, onSave }: 
         </div>
       </div>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+      {/* Body: Full Screen Products */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden", position: "relative" }}>
+        
         {/* Left Side - Product Selection */}
-        <div style={{ flex: "1 1 60%", display: "flex", flexDirection: "column", borderRight: isRTL ? "none" : `1px solid ${border}`, borderLeft: isRTL ? `1px solid ${border}` : "none" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", paddingBottom: 190 }}>
           <div style={{ padding: "16px 16px 0 16px" }}>
             <div style={{ position: "relative", marginBottom: 12 }}>
               <Search size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
@@ -154,91 +157,204 @@ export function NewPurchaseScreen({ suppliers, products = [], onBack, onSave }: 
           </div>
         </div>
 
-        {/* Right Side - Cart */}
-        <div style={{ flex: "1 1 40%", display: "flex", flexDirection: "column", background: surface }}>
-          <div style={{ padding: 16, borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", gap: 8 }}>
-            <ShoppingBag size={18} color={ds.textPrimary} />
-            <h3 style={{ margin: 0, color: ds.textPrimary, fontSize: 15, fontWeight: 700 }}>{isRTL ? "عناصر الفاتورة" : "Invoice Items"}</h3>
-          </div>
-          <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-            <AnimatePresence>
-              {cart.map(item => (
-                <motion.div key={item.productUnit.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-                  style={{ background: isDark ? ds.surface2 : "#F8FAFC", border: `1px solid ${border}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <span style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700 }}>{item.productUnit.product_name} <span style={{ color: ds.textMuted, fontWeight: 500 }}>({item.productUnit.unit_name})</span></span>
-                    <button title={isRTL ? "حذف" : "Remove"} onClick={() => removeFromCart(item.productUnit.id)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 size={16} color="#EF4444" /></button>
+        {/* Floating Smart Cart Bar */}
+        <div style={{ position: "absolute", bottom: 120, left: 24, right: 24, display: "flex", justifyContent: "center", zIndex: 40, pointerEvents: "none" }}>
+          <motion.div 
+            initial={{ y: 50, opacity: 0 }} 
+            animate={{ y: 0, opacity: 1 }}
+            style={{ 
+              background: isDark ? "rgba(12, 25, 41, 0.95)" : "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(20px)",
+              border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
+              borderRadius: 24,
+              padding: 8,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+              width: "100%",
+              maxWidth: 600,
+              pointerEvents: "auto",
+              cursor: "pointer"
+            }}
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('#pay-btn')) return;
+              setShowCartDrawer(true);
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "0 16px" }}>
+              <div style={{ position: "relative" }}>
+                <ShoppingBag size={24} color={ds.textPrimary} />
+                {cart.length > 0 && (
+                  <div style={{ position: "absolute", top: -8, right: -8, background: "#3B82F6", color: "white", fontSize: 11, fontWeight: 800, width: 20, height: 20, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", border: `2px solid ${isDark ? "#0C1929" : "#FFF"}` }}>
+                    {cart.reduce((sum, i) => sum + i.quantity, 0)}
                   </div>
-                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 11, color: ds.textSecondary, marginBottom: 4, display: "block" }}>{isRTL ? "الكمية" : "Qty"}</label>
-                      <input type="number" value={item.quantity} onChange={e => updateQuantity(item.productUnit.id, parseInt(e.target.value) || 0)} style={{ width: "100%", height: 36, borderRadius: 8, border: `1px solid ${border}`, background: surface, padding: "0 8px", color: ds.textPrimary, outline: "none" }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 11, color: ds.textSecondary, marginBottom: 4, display: "block" }}>{isRTL ? "تكلفة الوحدة" : "Unit Cost"}</label>
-                      <input type="number" value={item.unit_cost} onChange={e => updateCost(item.productUnit.id, parseFloat(e.target.value) || 0)} style={{ width: "100%", height: 36, borderRadius: 8, border: `1px solid ${border}`, background: surface, padding: "0 8px", color: ds.textPrimary, outline: "none" }} />
-                    </div>
-                    <div style={{ flex: 1, textAlign: isRTL ? "left" : "right" }}>
-                      <label style={{ fontSize: 11, color: ds.textSecondary, marginBottom: 4, display: "block" }}>{isRTL ? "المجموع" : "Total"}</label>
-                      <div style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 800, lineHeight: "36px" }}>{item.total.toLocaleString()}</div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-              {cart.length === 0 && (
-                <div style={{ textAlign: "center", color: ds.textMuted, padding: 40, fontSize: 14 }}>
-                  {isRTL ? "لم يتم إضافة أي منتج" : "No products added"}
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
-          
-          <div style={{ padding: "20px 20px 90px 20px", borderTop: `1px solid ${border}`, background: isDark ? ds.surface2 : "#F8FAFC" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-              <span style={{ color: ds.textSecondary, fontSize: 15, fontWeight: 600 }}>{isRTL ? "الإجمالي" : "Grand Total"}</span>
-              <span style={{ color: ds.textPrimary, fontSize: 24, fontWeight: 800 }}>{grandTotal.toLocaleString()}</span>
+                )}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600 }}>{isRTL ? "إجمالي الفاتورة" : "Invoice Total"}</span>
+                <span style={{ color: ds.primary, fontSize: 18, fontWeight: 800 }}>{grandTotal.toLocaleString()} <span style={{ fontSize: 12 }}>YER</span></span>
+              </div>
             </div>
-            <motion.button title={isRTL ? "حفظ وترحيل الفاتورة" : "Save & Post Invoice"} whileTap={{ scale: 0.98 }} onClick={() => {
-                if(cart.length > 0) {
-                  if (onSave) {
-                    const newInvoice = {
-                      id: `po_new_${Date.now()}`,
-                      business_id: "biz_001",
-                      branch_id: "br_001",
-                      supplier_id: selectedSupplierId || suppliers[0]?.id,
-                      warehouse_id: "wh_001",
-                      invoice_number: `PI-${Math.floor(Math.random() * 10000)}`,
-                      purchase_date: new Date().toISOString(),
-                      due_date: null,
-                      sub_total: grandTotal,
-                      discount_amount: 0,
-                      tax_amount: 0,
-                      grand_total: grandTotal,
-                      status: "Posted",
-                      payment_status: "Paid",
-                      notes: "تمت الإضافة من الشاشة الجديدة",
-                      items: cart.map(c => ({
-                        product_name: c.productUnit.product_name,
-                        unit_name: c.productUnit.unit_name,
-                        quantity: c.quantity,
-                        unit_price: c.unit_cost,
-                        total_price: c.total
-                      })),
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString()
-                    };
-                    onSave(newInvoice);
-                    toast.success(isRTL ? "تم حفظ الفاتورة بنجاح!" : "Invoice saved successfully!");
-                  } else {
-                    onBack();
-                  }
-                }
+
+            <button 
+              id="pay-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                if(cart.length > 0) setShowCartDrawer(true);
               }}
-              style={{ width: "100%", height: 52, background: cart.length > 0 ? "#3B82F6" : ds.border, color: cart.length > 0 ? "white" : ds.textMuted, border: "none", borderRadius: 14, fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: cart.length > 0 ? "pointer" : "not-allowed" }}>
-              <Check size={20} /> {isRTL ? "حفظ وترحيل الفاتورة" : "Save & Post Invoice"}
-            </motion.button>
-          </div>
+              style={{
+                background: cart.length === 0 ? (isDark ? ds.surface2 : "#E2E8F0") : "#3B82F6",
+                border: "none",
+                borderRadius: 16,
+                padding: "0 32px",
+                height: 52,
+                color: cart.length === 0 ? ds.textMuted : "white",
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: cart.length === 0 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                transition: "all 0.2s"
+              }}
+            >
+              <FileText size={20} />
+              {isRTL ? "مراجعة المشتريات" : "Review"}
+            </button>
+          </motion.div>
         </div>
+
+        {/* Side Drawer for Cart */}
+        <AnimatePresence>
+          {showCartDrawer && (
+            <>
+              {/* Backdrop */}
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }} 
+                onClick={() => setShowCartDrawer(false)}
+                style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", zIndex: 50 }} 
+              />
+              
+              {/* Drawer */}
+              <motion.div
+                initial={{ x: isRTL ? "-100%" : "100%" }} 
+                animate={{ x: 0 }} 
+                exit={{ x: isRTL ? "-100%" : "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  [isRTL ? "left" : "right"]: 0,
+                  width: "100%",
+                  maxWidth: 400,
+                  background: surface,
+                  zIndex: 60,
+                  display: "flex",
+                  flexDirection: "column",
+                  boxShadow: isRTL ? "10px 0 30px rgba(0,0,0,0.2)" : "-10px 0 30px rgba(0,0,0,0.2)",
+                  borderInlineStart: `1px solid ${isDark ? ds.border : "#E2E8F0"}`
+                }}
+              >
+                {/* Header */}
+                <div style={{ padding: "20px 24px", borderBottom: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <ShoppingBag size={22} color="#3B82F6" />
+                    <span style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>{isRTL ? "عناصر الفاتورة" : "Invoice Items"}</span>
+                  </div>
+                  <button onClick={() => setShowCartDrawer(false)} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 36, height: 36, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                    <X size={18} color={ds.textPrimary} />
+                  </button>
+                </div>
+
+                {/* Items */}
+                <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px" }}>
+                  <AnimatePresence>
+                    {cart.map(item => (
+                      <motion.div key={item.productUnit.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                        style={{ background: isDark ? ds.surface2 : "#F8FAFC", border: `1px solid ${border}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                          <span style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700 }}>{item.productUnit.product_name} <span style={{ color: ds.textMuted, fontWeight: 500 }}>({item.productUnit.unit_name})</span></span>
+                          <button title={isRTL ? "حذف" : "Remove"} onClick={() => removeFromCart(item.productUnit.id)} style={{ background: "none", border: "none", cursor: "pointer" }}><Trash2 size={16} color="#EF4444" /></button>
+                        </div>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: 11, color: ds.textSecondary, marginBottom: 4, display: "block" }}>{isRTL ? "الكمية" : "Qty"}</label>
+                            <input type="number" value={item.quantity} onChange={e => updateQuantity(item.productUnit.id, parseInt(e.target.value) || 0)} style={{ width: "100%", height: 36, borderRadius: 8, border: `1px solid ${border}`, background: surface, padding: "0 8px", color: ds.textPrimary, outline: "none" }} />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: 11, color: ds.textSecondary, marginBottom: 4, display: "block" }}>{isRTL ? "تكلفة الوحدة" : "Unit Cost"}</label>
+                            <input type="number" value={item.unit_cost} onChange={e => updateCost(item.productUnit.id, parseFloat(e.target.value) || 0)} style={{ width: "100%", height: 36, borderRadius: 8, border: `1px solid ${border}`, background: surface, padding: "0 8px", color: ds.textPrimary, outline: "none" }} />
+                          </div>
+                          <div style={{ flex: 1, textAlign: isRTL ? "left" : "right" }}>
+                            <label style={{ fontSize: 11, color: ds.textSecondary, marginBottom: 4, display: "block" }}>{isRTL ? "المجموع" : "Total"}</label>
+                            <div style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 800, lineHeight: "36px" }}>{item.total.toLocaleString()}</div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                    {cart.length === 0 && (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyItems: "center", height: "100%", justifyContent: "center", color: ds.textMuted, gap: 16, marginTop: 40 }}>
+                        <ShoppingBag size={48} color={ds.textMuted} strokeWidth={1} />
+                        <p style={{ fontSize: 15, fontWeight: 600 }}>{isRTL ? "لم يتم إضافة أي منتج" : "No products added"}</p>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                
+                {/* Drawer Footer (Totals & Save) */}
+                <div style={{ padding: "20px 24px 32px 24px", background: isDark ? ds.surface2 : "#F8FAFC", borderTop: `1px solid ${border}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
+                    <span style={{ color: ds.textSecondary, fontSize: 16, fontWeight: 600 }}>{isRTL ? "الإجمالي" : "Grand Total"}</span>
+                    <span style={{ color: ds.primary, fontSize: 24, fontWeight: 900 }}>{grandTotal.toLocaleString()}</span>
+                  </div>
+                  <motion.button title={isRTL ? "حفظ وترحيل الفاتورة" : "Save & Post Invoice"} whileTap={{ scale: 0.98 }} onClick={() => {
+                      if(cart.length > 0) {
+                        if (onSave) {
+                          const newInvoice = {
+                            id: `po_new_${Date.now()}`,
+                            business_id: "biz_001",
+                            branch_id: "br_001",
+                            supplier_id: selectedSupplierId || suppliers[0]?.id,
+                            warehouse_id: "wh_001",
+                            invoice_number: `PI-${Math.floor(Math.random() * 10000)}`,
+                            purchase_date: new Date().toISOString(),
+                            due_date: null,
+                            sub_total: grandTotal,
+                            discount_amount: 0,
+                            tax_amount: 0,
+                            grand_total: grandTotal,
+                            status: "Posted",
+                            payment_status: "Paid",
+                            notes: "تمت الإضافة من الشاشة الجديدة",
+                            items: cart.map(c => ({
+                              product_name: c.productUnit.product_name,
+                              unit_name: c.productUnit.unit_name,
+                              quantity: c.quantity,
+                              unit_price: c.unit_cost,
+                              total_price: c.total
+                            })),
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                          };
+                          onSave(newInvoice);
+                          toast.success(isRTL ? "تم حفظ الفاتورة بنجاح!" : "Invoice saved successfully!");
+                        } else {
+                          onBack();
+                        }
+                      }
+                    }}
+                    style={{ width: "100%", height: 56, background: cart.length > 0 ? "#3B82F6" : ds.border, color: cart.length > 0 ? "white" : ds.textMuted, border: "none", borderRadius: 16, fontSize: 17, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 12, cursor: cart.length > 0 ? "pointer" : "not-allowed", boxShadow: cart.length > 0 ? "0 8px 24px rgba(59,130,246,0.3)" : "none" }}>
+                    <Check size={22} /> {isRTL ? "حفظ وترحيل الفاتورة" : "Save & Post Invoice"}
+                  </motion.button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

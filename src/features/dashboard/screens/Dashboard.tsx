@@ -48,15 +48,15 @@ interface DashboardProps {
   onLogout?: () => void;
 }
 
-const NAV_ITEMS = [
-  { Icon: Home, labelKey: "navHome" },
-  { Icon: ShoppingCart, labelKey: "navSales" },
-  { Icon: Package, labelKey: "navInventory" },
-  { Icon: ShoppingBag, labelKey: "navPurchases", fallbackLabel: "المشتريات" },
-  { Icon: Users, labelKey: "navCustomers", fallbackLabel: "Customers" },
-  { Icon: DollarSign, labelKey: "navFinance" },
-  { Icon: PieChart, labelKey: "navReports", fallbackLabel: "التقارير" },
-  { Icon: Settings, labelKey: "navSettings" },
+import { Grid } from "lucide-react";
+import { MoreMenuSheet } from "../components/MoreMenuSheet";
+
+const CORE_NAV = [
+  { id: "home", tabIndex: 0, Icon: Home, labelAr: "الرئيسية", labelEn: "Home" },
+  { id: "sales", tabIndex: 1, Icon: ShoppingCart, labelAr: "المبيعات", labelEn: "Sales" },
+  { id: "inventory", tabIndex: 2, Icon: Package, labelAr: "المخزون", labelEn: "Inventory" },
+  { id: "finance", tabIndex: 5, Icon: DollarSign, labelAr: "المالية", labelEn: "Finance" },
+  { id: "more", tabIndex: -1, Icon: Grid, labelAr: "المزيد", labelEn: "More" },
 ];
 
 export function Dashboard({ onLogout }: DashboardProps) {
@@ -66,6 +66,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [customers, setCustomers] = useState<any[]>(MOCK_CUSTOMERS);
   const [products, setProducts] = useState<any[]>(MOCK_PRODUCTS);
   const [quickAction, setQuickAction] = useState<string | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   const handleQuickAction = (actionId: string, tabIndex: number) => {
     setQuickAction(actionId);
@@ -475,36 +476,45 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </AnimatePresence>
       </div>
 
-      {/* Bottom navigation - Floating Dock */}
+      {/* Bottom navigation - Classic 5 Items Dock */}
       <div
         style={{
           position: "absolute",
           bottom: 24, // Safe area padding
           left: 24,
           right: 24,
-          background: isDark ? "rgba(12, 25, 41, 0.85)" : "rgba(255, 255, 255, 0.85)",
+          background: isDark ? "rgba(12, 25, 41, 0.95)" : "rgba(255, 255, 255, 0.95)",
           backdropFilter: "blur(20px)",
           border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.05)"}`,
-          borderRadius: 32,
+          borderRadius: 24,
           display: "flex",
-          justifyContent: "space-around",
-          padding: "8px 12px",
+          justifyContent: "space-between",
+          padding: "10px 16px",
           zIndex: 50,
-          boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(15, 23, 42, 0.08)",
+          boxShadow: isDark ? "0 20px 40px rgba(0,0,0,0.5)" : "0 20px 40px rgba(15, 23, 42, 0.1)",
         }}
       >
-        {NAV_ITEMS.map(({ Icon, labelKey, fallbackLabel }, i) => {
-          const isActive = activeTab === i;
+        {CORE_NAV.map(({ id, tabIndex, Icon, labelAr, labelEn }) => {
+          // If a non-core tab is active (like Purchases = 3), highlight "More"
+          const isActiveCore = activeTab === tabIndex;
+          const isMoreActive = id === "more" && ![0, 1, 2, 5].includes(activeTab);
+          const isActive = isActiveCore || isMoreActive;
+          
           return (
             <button
-              key={i}
-              title={t[labelKey] || fallbackLabel || "Navigation Tab"}
-              onClick={() => setActiveTab(i)}
+              key={id}
+              onClick={() => {
+                if (id === "more") {
+                  setShowMoreMenu(true);
+                } else {
+                  setActiveTab(tabIndex);
+                }
+              }}
               style={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 4,
+                gap: 6,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -512,53 +522,42 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 position: "relative",
                 fontFamily: "inherit",
                 flex: 1,
-                minWidth: 48,
-                transition: "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)"
+                minWidth: 56,
+                WebkitTapHighlightColor: "transparent"
               }}
             >
-              {isActive && (
-                <motion.div
-                  layoutId="bottomNavIndicator"
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: isDark ? "rgba(59,130,246,0.15)" : "rgba(37,99,235,0.08)",
-                    borderRadius: 24,
-                    zIndex: 0
-                  }}
-                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                />
-              )}
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <Icon
-                  size={24}
-                  color={isActive ? ds.primary : ds.textMuted}
-                  strokeWidth={isActive ? 2.5 : 2}
-                  style={{ 
-                    transition: "color 0.2s, transform 0.2s", 
-                    transform: isActive ? "scale(1.1) translateY(-2px)" : "scale(1)" 
-                  }}
-                />
-              </div>
-              {isActive && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 5 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  style={{
-                    position: "absolute",
-                    bottom: -4,
-                    width: 4,
-                    height: 4,
-                    borderRadius: 2,
-                    background: ds.primary,
-                    zIndex: 1
-                  }}
-                />
-              )}
+              <Icon
+                size={24}
+                color={isActive ? ds.primary : ds.textMuted}
+                strokeWidth={isActive ? 2.5 : 2}
+                style={{ transition: "color 0.2s" }}
+              />
+              <span style={{ 
+                fontSize: 11, 
+                fontWeight: isActive ? 800 : 600, 
+                color: isActive ? ds.primary : ds.textMuted,
+                transition: "color 0.2s"
+              }}>
+                {isRTL ? labelAr : labelEn}
+              </span>
             </button>
           );
         })}
       </div>
+
+      {/* More Menu Sheet */}
+      <AnimatePresence>
+        {showMoreMenu && (
+          <MoreMenuSheet 
+            activeTab={activeTab}
+            onSelectTab={(tab) => {
+              setActiveTab(tab);
+              setShowMoreMenu(false);
+            }} 
+            onClose={() => setShowMoreMenu(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
