@@ -43,6 +43,10 @@ export function SupplierFormSheet({ supplier, onClose, onSave }: SupplierFormShe
     phone: supplier?.phone || "",
     supplier_address: supplier?.supplier_address || "",
     is_active: supplier?.is_active ?? true,
+    opening_balance: supplier?.opening_balance?.toString() || "",
+    opening_balance_type: supplier?.opening_balance_type || "credit",
+    opening_balance_date: supplier?.opening_balance_date || new Date().toISOString().split("T")[0],
+    opening_balance_notes: supplier?.opening_balance_notes || "",
   });
 
   const bg = isDark ? ds.bg : "#F8FAFC";
@@ -56,7 +60,10 @@ export function SupplierFormSheet({ supplier, onClose, onSave }: SupplierFormShe
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({
+      ...formData,
+      opening_balance: parseFloat(formData.opening_balance) || 0,
+    });
   };
 
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
@@ -126,6 +133,38 @@ export function SupplierFormSheet({ supplier, onClose, onSave }: SupplierFormShe
               
               <InputWrapper label={isRTL ? "العنوان" : "Address"} icon={MapPin} isFocused={focusedInput === "supplier_address"} isRTL={isRTL} ds={ds}>
                 <input name="supplier_address" value={formData.supplier_address} onChange={handleChange} onFocus={() => setFocusedInput("supplier_address")} onBlur={() => setFocusedInput(null)} style={getInputStyle("supplier_address")} placeholder={isRTL ? "المدينة، الشارع" : "City, Street"} />
+              </InputWrapper>
+            </div>
+          </div>
+
+          {/* Opening Balance Section */}
+          <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20, marginBottom: 24 }}>
+            <h3 style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+              <User size={18} color="#10B981" /> {isRTL ? "الرصيد الافتتاحي (أول المدة)" : "Opening Balance"}
+            </h3>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <InputWrapper label={isRTL ? "مبلغ الرصيد الافتتاحي" : "Opening Balance Amount"} isFocused={focusedInput === "opening_balance"} isRTL={isRTL} ds={ds}>
+                <input type="number" name="opening_balance" value={formData.opening_balance} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance"), paddingInlineStart: 16 }} placeholder="0.00" />
+              </InputWrapper>
+
+              <InputWrapper label={isRTL ? "نوع الرصيد" : "Balance Type"} isFocused={focusedInput === "opening_balance_type"} isRTL={isRTL} ds={ds}>
+                <select name="opening_balance_type" value={formData.opening_balance_type} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance_type")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance_type"), paddingInlineStart: 16 }}>
+                  <option value="credit">{isRTL ? "دائن (علينا)" : "Credit (Payable)"}</option>
+                  <option value="debit">{isRTL ? "مدين (لنا)" : "Debit (Receivable)"}</option>
+                </select>
+              </InputWrapper>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              <InputWrapper label={isRTL ? "تاريخ إدخال الرصيد الافتتاحي" : "Opening Balance Date"} isFocused={focusedInput === "opening_balance_date"} isRTL={isRTL} ds={ds}>
+                <input type="date" name="opening_balance_date" value={formData.opening_balance_date} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance_date")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance_date"), paddingInlineStart: 16 }} />
+              </InputWrapper>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <InputWrapper label={isRTL ? "البيان / تفاصيل الرصيد (اختياري)" : "Statement / Narration (Optional)"} isFocused={focusedInput === "opening_balance_notes"} isRTL={isRTL} ds={ds}>
+                <input name="opening_balance_notes" value={formData.opening_balance_notes} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance_notes")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance_notes"), paddingInlineStart: 16 }} placeholder={isRTL ? "مثال: رصيد مرحل من الدفاتر السابقة" : "e.g. Balance carried forward"} />
               </InputWrapper>
             </div>
           </div>

@@ -9,7 +9,8 @@ import { PurchasesTabScreen } from "./PurchasesTabScreen";
 import { ContactsAndSuppliersScreen } from "./ContactsAndSuppliersScreen";
 import { EmployeeListScreen } from "./EmployeeListScreen";
 import { FixedAssetListScreen } from "./FixedAssetListScreen";
-import { Package, Building2, ArrowLeftRight, ClipboardCheck, ShoppingBag, Users, UserCog, Cpu } from "lucide-react";
+import { DocumentListScreen } from "./DocumentListScreen";
+import { Package, Building2, ArrowLeftRight, ClipboardCheck, ShoppingBag, Users, UserCog, Cpu, FolderArchive } from "lucide-react";
 
 interface InventoryModuleProps {
   initialAction?: "new" | "newCustomer" | "newPurchase" | null;
@@ -40,7 +41,7 @@ export function InventoryModule({
   };
 
   const [activeTab, setActiveTab] = useState<
-    "products" | "purchases" | "contacts" | "employees" | "assets" | "adjustments"
+    "products" | "purchases" | "contacts" | "employees" | "assets" | "documents" | "adjustments"
   >(getInitialTab());
 
   const bg = isDark ? ds.bg : "#F8FAFC";
@@ -52,6 +53,7 @@ export function InventoryModule({
     { id: "contacts", label: isRTL ? "العملاء والموردين" : "Contacts & Suppliers", icon: Users },
     { id: "employees", label: isRTL ? "الموظفين" : "Staff", icon: UserCog },
     { id: "assets", label: isRTL ? "الأصول الثابتة" : "Fixed Assets", icon: Cpu },
+    { id: "documents", label: isRTL ? "الأرشيف والمستندات" : "Documents Archive", icon: FolderArchive },
     { id: "adjustments", label: isRTL ? "تسوية وجرد المخزون" : "Stock Adjustments", icon: ClipboardCheck },
   ] as const;
 
@@ -138,6 +140,7 @@ export function InventoryModule({
             )}
             {activeTab === "employees" && <EmployeeListScreen />}
             {activeTab === "assets" && <FixedAssetListScreen />}
+            {activeTab === "documents" && <DocumentListScreen />}
             {activeTab === "adjustments" && <StockAdjustmentsScreen products={products} />}
           </motion.div>
       </div>

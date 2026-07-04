@@ -22,6 +22,10 @@ export interface Supplier {
   phone:            string | null;
   supplier_address: string | null;
   is_active:        boolean;
+  opening_balance?:       number;
+  opening_balance_type?:  "debit" | "credit";
+  opening_balance_date?:  string;
+  opening_balance_notes?: string;
   created_at:       ISODateString;
   updated_at:       ISODateString;
   deleted_at:       ISODateString | null;

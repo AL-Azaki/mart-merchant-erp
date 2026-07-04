@@ -23,6 +23,10 @@ export interface Customer {
   address:       string | null;
   credit_limit:  number;          // 0 = no credit allowed
   is_active:     boolean;
+  opening_balance?:       number;
+  opening_balance_type?:  "debit" | "credit";
+  opening_balance_date?:  string;
+  opening_balance_notes?: string;
   created_at:    ISODateString;
   updated_at:    ISODateString;
   deleted_at:    ISODateString | null;

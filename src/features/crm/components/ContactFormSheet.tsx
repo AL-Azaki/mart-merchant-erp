@@ -44,6 +44,10 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
     phone: contact?.phone || "",
     address: contact?.address || "",
     credit_limit: contact?.credit_limit?.toString() || "",
+    opening_balance: contact?.opening_balance?.toString() || "",
+    opening_balance_type: contact?.opening_balance_type || "debit",
+    opening_balance_date: contact?.opening_balance_date || new Date().toISOString().split("T")[0],
+    opening_balance_notes: contact?.opening_balance_notes || "",
   });
 
   const bg = isDark ? ds.bg : "#F8FAFC";
@@ -59,7 +63,8 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
     e.preventDefault();
     onSave({
       ...formData,
-      credit_limit: parseFloat(formData.credit_limit) || 0
+      credit_limit: parseFloat(formData.credit_limit) || 0,
+      opening_balance: parseFloat(formData.opening_balance) || 0,
     });
   };
 
@@ -139,6 +144,38 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
           <InputWrapper label={isRTL ? "الحد الائتماني" : "Credit Limit"} icon={CreditCard} isFocused={focusedInput === "credit_limit"} isRTL={isRTL} ds={ds}>
             <input type="number" name="credit_limit" value={formData.credit_limit} onChange={handleChange} onFocus={() => setFocusedInput("credit_limit")} onBlur={() => setFocusedInput(null)} style={getInputStyle("credit_limit")} placeholder="0.00" />
           </InputWrapper>
+
+          {/* Opening Balance Section */}
+          <div style={{ borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, paddingTop: 16, marginTop: 16 }}>
+            <h4 style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700, marginBottom: 16 }}>
+              {isRTL ? "الرصيد الافتتاحي (أول المدة)" : "Opening Balance"}
+            </h4>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+              <InputWrapper label={isRTL ? "مبلغ الرصيد الافتتاحي" : "Opening Balance Amount"} isFocused={focusedInput === "opening_balance"} isRTL={isRTL} ds={ds}>
+                <input type="number" name="opening_balance" value={formData.opening_balance} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance"), paddingInlineStart: 16 }} placeholder="0.00" />
+              </InputWrapper>
+
+              <InputWrapper label={isRTL ? "نوع الرصيد" : "Balance Type"} isFocused={focusedInput === "opening_balance_type"} isRTL={isRTL} ds={ds}>
+                <select name="opening_balance_type" value={formData.opening_balance_type} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance_type")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance_type"), paddingInlineStart: 16 }}>
+                  <option value="debit">{isRTL ? "مدين (لنا)" : "Debit (Receivable)"}</option>
+                  <option value="credit">{isRTL ? "دائن (علينا)" : "Credit (Payable)"}</option>
+                </select>
+              </InputWrapper>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 16 }}>
+              <InputWrapper label={isRTL ? "تاريخ إدخال الرصيد الافتتاحي" : "Opening Balance Date"} isFocused={focusedInput === "opening_balance_date"} isRTL={isRTL} ds={ds}>
+                <input type="date" name="opening_balance_date" value={formData.opening_balance_date} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance_date")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance_date"), paddingInlineStart: 16 }} />
+              </InputWrapper>
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <InputWrapper label={isRTL ? "البيان / تفاصيل الرصيد (اختياري)" : "Statement / Narration (Optional)"} isFocused={focusedInput === "opening_balance_notes"} isRTL={isRTL} ds={ds}>
+                <input name="opening_balance_notes" value={formData.opening_balance_notes} onChange={handleChange} onFocus={() => setFocusedInput("opening_balance_notes")} onBlur={() => setFocusedInput(null)} style={{ ...getInputStyle("opening_balance_notes"), paddingInlineStart: 16 }} placeholder={isRTL ? "مثال: رصيد مرحل من الدفاتر السابقة" : "e.g. Balance carried forward"} />
+              </InputWrapper>
+            </div>
+          </div>
         </div>
       </form>
 
