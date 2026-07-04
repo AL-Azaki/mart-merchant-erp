@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "motion/react";
-import { X, Check, UserCircle, Mail, Phone, Lock } from "lucide-react";
+import { X, Check, UserCircle, Mail, Phone, Lock, MapPin } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { useToast } from "@/providers/ToastProvider";
-import type { User, Role } from "@/core/types/users";
+import type { User } from "@/core/types/users";
 import { MOCK_ROLES } from "@/core/data/usersMockData";
+import { MOCK_BRANCHES } from "@/core/data/mockData";
 
 interface UserFormSheetProps {
   user: User | null;
@@ -18,10 +19,10 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
     username: user?.username || "",
-    email: user?.email || "",
     phone: user?.phone || "",
     password: "", // Only for new users or reset
     role_id: user?.roles?.[0]?.id || MOCK_ROLES[0].id,
+    default_branch_id: user?.default_branch_id || MOCK_BRANCHES[0].id,
     is_active: user ? user.is_active : true,
   });
 
@@ -37,7 +38,7 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.full_name || !formData.username || !formData.email) {
+    if (!formData.full_name || !formData.username) {
       toast.warning(isRTL ? "يرجى تعبئة جميع الحقول المطلوبة" : "Please fill all required fields");
       return;
     }
@@ -51,11 +52,10 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
     onSave({
       full_name: formData.full_name,
       username: formData.username,
-      email: formData.email,
       phone: formData.phone,
       is_active: formData.is_active,
+      default_branch_id: formData.default_branch_id,
       roles: selectedRole ? [selectedRole] : [],
-      // In a real app, password would be handled by backend
     });
   };
 
@@ -64,7 +64,8 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
     background: isDark ? ds.surface2 : "#FFFFFF",
     border: `1px solid ${border}`, borderRadius: 12,
     color: ds.textPrimary, fontSize: 14, fontWeight: 500,
-    outline: "none", fontFamily: "inherit"
+    outline: "none", fontFamily: "inherit",
+    boxSizing: "border-box" as const
   });
 
   return (
@@ -108,20 +109,11 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
             </div>
           </div>
 
-          <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "البريد الإلكتروني *" : "Email *"}</label>
-              <div style={{ position: "relative" }}>
-                <Mail size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
-                <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="email@example.com" style={getInputStyle()} />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "رقم الهاتف" : "Phone"}</label>
-              <div style={{ position: "relative" }}>
-                <Phone size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
-                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="05XXXXXXXX" style={getInputStyle()} />
-              </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "رقم الهاتف" : "Phone"}</label>
+            <div style={{ position: "relative" }}>
+              <Phone size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
+              <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="05XXXXXXXX" style={getInputStyle()} />
             </div>
           </div>
 
@@ -133,13 +125,24 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
             </div>
           </div>
 
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "دور المستخدم (الصلاحيات) *" : "User Role *"}</label>
-            <select name="role_id" value={formData.role_id} onChange={handleChange} style={{ width: "100%", height: 48, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
-              {MOCK_ROLES.map(r => (
-                <option key={r.id} value={r.id}>{r.role_name}</option>
-              ))}
-            </select>
+          <div style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div>
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "دور المستخدم (الصلاحيات) *" : "User Role *"}</label>
+              <select name="role_id" value={formData.role_id} onChange={handleChange} style={{ width: "100%", height: 48, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
+                {MOCK_ROLES.map(r => (
+                  <option key={r.id} value={r.id}>{r.role_name}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الفرع المتاح *" : "Assigned Branch *"}</label>
+              <select name="default_branch_id" value={formData.default_branch_id} onChange={handleChange} style={{ width: "100%", height: 48, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
+                {MOCK_BRANCHES.map(b => (
+                  <option key={b.id} value={b.id}>{b.branch_name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div style={{ marginBottom: 24, background: isDark ? ds.surface2 : "#F8FAFC", padding: 16, borderRadius: 12, border: `1px solid ${border}` }}>

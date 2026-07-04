@@ -42,7 +42,6 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
   const [formData, setFormData] = useState({
     customer_name: contact?.customer_name || "",
     phone: contact?.phone || "",
-    email: contact?.email || "",
     address: contact?.address || "",
     credit_limit: contact?.credit_limit?.toString() || "",
   });

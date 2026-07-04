@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Box,
   CreditCard,
+  TrendingDown,
+  TrendingUp
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { SettingsBar } from "@/shared/components/SettingsBar";
@@ -40,15 +42,12 @@ interface DashboardProps {
   onLogout?: () => void;
 }
 
-import { Grid } from "lucide-react";
-import { MoreMenuSheet } from "../components/MoreMenuSheet";
-
 const CORE_NAV = [
   { id: "home", tabIndex: 0, Icon: Home, labelAr: "الرئيسية", labelEn: "Home" },
   { id: "sales", tabIndex: 1, Icon: ShoppingCart, labelAr: "المبيعات", labelEn: "Sales" },
   { id: "inventory", tabIndex: 2, Icon: Package, labelAr: "المخزون", labelEn: "Inventory" },
   { id: "finance", tabIndex: 3, Icon: DollarSign, labelAr: "المالية", labelEn: "Finance" },
-  { id: "more", tabIndex: -1, Icon: Grid, labelAr: "المزيد", labelEn: "More" },
+  { id: "settings", tabIndex: 4, Icon: Settings, labelAr: "الإعدادات", labelEn: "Settings" },
 ];
 
 export function Dashboard({ onLogout }: DashboardProps) {
@@ -85,31 +84,31 @@ export function Dashboard({ onLogout }: DashboardProps) {
       border: isDark ? "rgba(59, 130, 246, 0.25)" : "#BFDBFE",
     },
     {
-      Icon: FileText,
-      label: t.totalInvoices,
-      value: stats.today_invoices.toString(),
-      unit: t.invoices,
-      color: "#F59E0B",
-      bg: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB",
-      border: isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A",
-    },
-    {
-      Icon: Box,
-      label: t.totalProducts,
-      value: stats.total_products.toString(),
-      unit: t.items,
+      Icon: TrendingDown,
+      label: isRTL ? "ديون العملاء (لنا)" : "Receivables (Debts)",
+      value: "850,000",
+      unit: t.currencyYER,
       color: "#10B981",
       bg: isDark ? "rgba(16, 185, 129, 0.15)" : "#F0FDFA",
       border: isDark ? "rgba(16, 185, 129, 0.25)" : "#A7F3D0",
     },
     {
-      Icon: Users,
-      label: t.totalCustomers,
-      value: stats.total_customers.toString(),
-      unit: t.clients,
-      color: "#8B5CF6",
-      bg: isDark ? "rgba(139, 92, 246, 0.15)" : "#F5F3FF",
-      border: isDark ? "rgba(139, 92, 246, 0.25)" : "#DDD6FE",
+      Icon: TrendingUp,
+      label: isRTL ? "ديون الموردين (علينا)" : "Supplier Payables",
+      value: "420,000",
+      unit: t.currencyYER,
+      color: "#EF4444",
+      bg: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEF2F2",
+      border: isDark ? "rgba(239, 68, 68, 0.25)" : "#FCA5A5",
+    },
+    {
+      Icon: CreditCard,
+      label: isRTL ? "المصروفات التشغيلية" : "Operating Expenses",
+      value: "120,000",
+      unit: t.currencyYER,
+      color: "#F59E0B",
+      bg: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB",
+      border: isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A",
     },
   ];
 
@@ -141,13 +140,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </span>
       </div>
 
-      {/* Stat cards 2x2 */}
+      {/* Stat cards in one row */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          display: "flex",
           gap: 12,
           marginBottom: 24,
+          overflowX: "auto",
+          paddingBottom: 4,
         }}
       >
         {statCards.map((s, i) => (
@@ -156,78 +156,72 @@ export function Dashboard({ onLogout }: DashboardProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.08, type: "spring", stiffness: 300, damping: 24 }}
-            whileHover={{ y: -2, boxShadow: ds.shadowLg }}
+            whileHover={{ y: -1, boxShadow: ds.shadowMd }}
             style={{
               background: isDark ? ds.surface : "#FFFFFF",
-              borderRadius: 20,
-              padding: "16px",
-              boxShadow: ds.shadowMd,
+              borderRadius: 16,
+              padding: "12px",
+              boxShadow: ds.shadowSm,
               border: `1px solid ${isDark ? ds.border : "#F1F5F9"}`,
               display: "flex",
-              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
               position: "relative",
               overflow: "hidden",
+              flex: "1 0 160px",
             }}
           >
-            {/* Top Right Decoration */}
-            <div style={{ position: "absolute", top: -15, right: -15, width: 60, height: 60, borderRadius: "50%", background: s.bg, opacity: 0.5, pointerEvents: "none" }} />
-            
             <div
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: 14,
+                width: 36,
+                height: 36,
+                borderRadius: 12,
                 background: s.bg,
                 border: `1px solid ${s.border}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: 12,
-                position: "relative",
-                zIndex: 1,
+                flexShrink: 0,
               }}
             >
-              <s.Icon size={20} color={s.color} strokeWidth={2.2} />
+              <s.Icon size={16} color={s.color} strokeWidth={2.5} />
             </div>
             
-            <div
-              style={{
-                color: ds.textSecondary,
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                marginBottom: 6,
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              {s.label}
-            </div>
-            
-            <div
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: 6,
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              <span
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
                 style={{
-                  color: ds.textPrimary,
-                  fontSize: 22,
-                  fontWeight: 800,
-                  lineHeight: 1,
-                  letterSpacing: "-0.5px",
+                  color: ds.textSecondary,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  marginBottom: 2,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
                 }}
               >
-                {s.value}
-              </span>
-              <span style={{ color: ds.textMuted, fontSize: 11, fontWeight: 500 }}>
-                {s.unit}
-              </span>
+                {s.label}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  gap: 4,
+                }}
+              >
+                <span
+                  style={{
+                    color: ds.textPrimary,
+                    fontSize: 15,
+                    fontWeight: 800,
+                    lineHeight: 1,
+                  }}
+                >
+                  {s.value}
+                </span>
+                <span style={{ color: ds.textMuted, fontSize: 10, fontWeight: 600 }}>
+                  {s.unit}
+                </span>
+              </div>
             </div>
           </motion.div>
         ))}
@@ -337,8 +331,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         />
       );
       case 3: return <FinanceModule initialAction={quickAction === "expenses" ? "expense" : null} />;
-      case 4: return <ReportsModule />;
-      case 5: return settingsView === "users" ? <UsersRolesModule onBack={() => setSettingsView("main")} /> : renderSettings();
+      case 4: return settingsView === "users" ? <UsersRolesModule onBack={() => setSettingsView("main")} /> : renderSettings();
       default: return renderHome();
     }
   };
@@ -445,20 +438,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
         }}
       >
         {CORE_NAV.map(({ id, tabIndex, Icon, labelAr, labelEn }) => {
-          // If a non-core tab is active, highlight "More"
-          const isActiveCore = activeTab === tabIndex;
-          const isMoreActive = id === "more" && ![0, 1, 2, 3].includes(activeTab);
-          const isActive = isActiveCore || isMoreActive;
+          const isActive = activeTab === tabIndex;
           
           return (
             <button
               key={id}
               onClick={() => {
-                if (id === "more") {
-                  setShowMoreMenu(true);
-                } else {
-                  setActiveTab(tabIndex);
-                }
+                setActiveTab(tabIndex);
               }}
               style={{
                 display: "flex",
@@ -494,20 +480,6 @@ export function Dashboard({ onLogout }: DashboardProps) {
           );
         })}
       </div>
-
-      {/* More Menu Sheet */}
-      <AnimatePresence>
-        {showMoreMenu && (
-          <MoreMenuSheet 
-            activeTab={activeTab}
-            onSelectTab={(tab) => {
-              setActiveTab(tab);
-              setShowMoreMenu(false);
-            }} 
-            onClose={() => setShowMoreMenu(false)} 
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

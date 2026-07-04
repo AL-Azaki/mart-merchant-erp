@@ -7,7 +7,9 @@ import { InventoryTransactionsScreen } from "./InventoryTransactionsScreen";
 import { StockAdjustmentsScreen } from "./StockAdjustmentsScreen";
 import { PurchasesTabScreen } from "./PurchasesTabScreen";
 import { ContactsAndSuppliersScreen } from "./ContactsAndSuppliersScreen";
-import { Package, Building2, ArrowLeftRight, ClipboardCheck, ShoppingBag, Users } from "lucide-react";
+import { EmployeeListScreen } from "./EmployeeListScreen";
+import { FixedAssetListScreen } from "./FixedAssetListScreen";
+import { Package, Building2, ArrowLeftRight, ClipboardCheck, ShoppingBag, Users, UserCog, Cpu } from "lucide-react";
 
 interface InventoryModuleProps {
   initialAction?: "new" | "newCustomer" | "newPurchase" | null;
@@ -37,7 +39,9 @@ export function InventoryModule({
     return "products";
   };
 
-  const [activeTab, setActiveTab] = useState<"products" | "purchases" | "contacts" | "warehouses" | "transactions" | "adjustments">(getInitialTab());
+  const [activeTab, setActiveTab] = useState<
+    "products" | "purchases" | "contacts" | "employees" | "assets" | "adjustments"
+  >(getInitialTab());
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
@@ -46,8 +50,8 @@ export function InventoryModule({
     { id: "products", label: isRTL ? "المنتجات" : "Products", icon: Package },
     { id: "purchases", label: isRTL ? "المشتريات" : "Purchases", icon: ShoppingBag },
     { id: "contacts", label: isRTL ? "العملاء والموردين" : "Contacts & Suppliers", icon: Users },
-    { id: "warehouses", label: isRTL ? "المستودعات" : "Warehouses", icon: Building2 },
-    { id: "transactions", label: isRTL ? "حركات المخزون" : "Stock Movements", icon: ArrowLeftRight },
+    { id: "employees", label: isRTL ? "الموظفين" : "Staff", icon: UserCog },
+    { id: "assets", label: isRTL ? "الأصول الثابتة" : "Fixed Assets", icon: Cpu },
     { id: "adjustments", label: isRTL ? "تسوية وجرد المخزون" : "Stock Adjustments", icon: ClipboardCheck },
   ] as const;
 
@@ -132,8 +136,8 @@ export function InventoryModule({
                 initialAction={initialAction === "newCustomer" ? "newCustomer" : null}
               />
             )}
-            {activeTab === "warehouses" && <WarehouseListScreen />}
-            {activeTab === "transactions" && <InventoryTransactionsScreen />}
+            {activeTab === "employees" && <EmployeeListScreen />}
+            {activeTab === "assets" && <FixedAssetListScreen />}
             {activeTab === "adjustments" && <StockAdjustmentsScreen products={products} />}
           </motion.div>
       </div>

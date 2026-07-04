@@ -84,7 +84,11 @@ export function RoleListScreen() {
                 
                 <div style={{ flex: 1, minWidth: 0, paddingTop: 4 }}>
                   <h3 style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 6 }}>{r.role_name}</h3>
-                  <div style={{ color: ds.textSecondary, fontSize: 13, lineHeight: 1.4 }}>{r.description || (isRTL ? "لا يوجد وصف" : "No description")}</div>
+                  <div style={{ color: ds.textSecondary, fontSize: 13, lineHeight: 1.4, marginBottom: 8 }}>{r.description || (isRTL ? "لا يوجد وصف" : "No description")}</div>
+                  
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: isDark ? ds.surface2 : "#FFFBEB", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "#D97706" }}>
+                    <ShieldCheck size={12} /> {((r as any).permission_ids || []).length} {isRTL ? "صلاحيات" : "Permissions"}
+                  </div>
                 </div>
               </div>
 
@@ -122,6 +126,7 @@ export function RoleListScreen() {
                   is_system_role: false, is_active: data.is_active ?? true,
                   created_at: new Date().toISOString()
                 };
+                (newRole as any).permission_ids = data.permission_ids || [];
                 setRoles(prev => [newRole, ...prev]);
               }
               setShowForm(false);
@@ -136,6 +141,7 @@ export function RoleListScreen() {
             onClose={() => setRoleToDelete(null)}
             onConfirm={() => {
               setRoles(prev => prev.filter(role => role.id !== roleToDelete.id));
+              setRoleToDelete(null);
             }}
             itemName={roleToDelete.role_name}
           />

@@ -97,11 +97,7 @@ export function ContactListScreen({ customers, onUpdateCustomers, onBack, initia
                             <Phone size={14} /> <span style={{ direction: "ltr" }}>{c.phone}</span>
                           </div>
                         )}
-                        {c.email && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, color: ds.textSecondary, fontSize: 13 }}>
-                            <Mail size={14} /> <span>{c.email}</span>
-                          </div>
-                        )}
+
                       </div>
                     </div>
                   </div>
@@ -148,7 +144,6 @@ export function ContactListScreen({ customers, onUpdateCustomers, onBack, initia
                   id: `cust_${Date.now()}`, business_id: "biz_001",
                   customer_name: data.customer_name!,
                   phone: data.phone || null,
-                  email: data.email || null,
                   address: data.address || null,
                   credit_limit: data.credit_limit || 0,
                   is_active: data.is_active ?? true,

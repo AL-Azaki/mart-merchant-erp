@@ -1,29 +1,45 @@
+import { useState, useMemo } from "react";
 import { useApp } from "@/providers/AppProvider";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
-import { motion } from "motion/react";
-import { TrendingUp, Package, AlertCircle, Clock, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, LabelList } from "recharts";
+import { motion, AnimatePresence } from "motion/react";
+import { TrendingUp, Package, AlertCircle, Clock, ArrowUpRight, ArrowDownRight, Calendar } from "lucide-react";
 
-const salesData = [
-  { name: "Sat", sales: 4000 },
-  { name: "Sun", sales: 3000 },
-  { name: "Mon", sales: 5000 },
-  { name: "Tue", sales: 2780 },
-  { name: "Wed", sales: 8900 },
-  { name: "Thu", sales: 6390 },
-  { name: "Fri", sales: 10400 },
+// Localized Mock Data by Timeframe
+const weeklySalesData = [
+  { name: "السبت", sales: 4000 },
+  { name: "الأحد", sales: 3000 },
+  { name: "الاثنين", sales: 5000 },
+  { name: "الثلاثاء", sales: 2780 },
+  { name: "الأربعاء", sales: 8900 },
+  { name: "الخميس", sales: 6390 },
+  { name: "الجمعة", sales: 10400 },
+];
+
+const monthlySalesData = [
+  { name: "الأسبوع 1", sales: 32000 },
+  { name: "الأسبوع 2", sales: 45000 },
+  { name: "الأسبوع 3", sales: 29000 },
+  { name: "الأسبوع 4", sales: 51000 },
+];
+
+const yearlySalesData = [
+  { name: "الربع 1", sales: 120000 },
+  { name: "الربع 2", sales: 185000 },
+  { name: "الربع 3", sales: 150000 },
+  { name: "الربع 4", sales: 240000 },
 ];
 
 const topProductsData = [
-  { name: "Pepsi Cola", value: 1200 },
-  { name: "Lays Chips", value: 800 },
-  { name: "Water 1L", value: 650 },
-  { name: "Chocolate Bar", value: 400 },
+  { name: "بيبسي كولا", value: 1200 },
+  { name: "شيبس ليز", value: 800 },
+  { name: "مياه معدنية 1 لتر", value: 650 },
+  { name: "شوكولاتة جالاكسي", value: 400 },
 ];
 
 const lowStockData = [
-  { id: "1", name: "Red Bull 250ml", stock: 5, min: 20 },
-  { id: "2", name: "Nescafe Classic", stock: 2, min: 10 },
-  { id: "3", name: "Lipton Tea", stock: 0, min: 15 },
+  { id: "1", name: "ريد بول 250 مل", stock: 5, min: 20 },
+  { id: "2", name: "نسكافيه كلاسيك", stock: 2, min: 10 },
+  { id: "3", name: "شاي ليبتون أحمر", stock: 0, min: 15 },
 ];
 
 const recentTransactions = [
@@ -35,11 +51,20 @@ const recentTransactions = [
 
 export function DashboardAnalytics() {
   const { t, isDark, isRTL, ds } = useApp();
+  const [timeframe, setTimeframe] = useState<"weekly" | "monthly" | "yearly">("weekly");
   
   const bg = isDark ? ds.surface : "#FFFFFF";
   const border = isDark ? ds.border : "#F1F5F9";
   const textPrimary = ds.textPrimary;
   const textSecondary = ds.textSecondary;
+
+  const currentChartData = useMemo(() => {
+    switch (timeframe) {
+      case "monthly": return monthlySalesData;
+      case "yearly": return yearlySalesData;
+      default: return weeklySalesData;
+    }
+  }, [timeframe]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -57,26 +82,61 @@ export function DashboardAnalytics() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24, marginTop: 8 }}>
-      {/* Weekly Sales Chart */}
+      {/* Weekly/Monthly/Yearly Sales Chart */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
         style={{ background: bg, border: `1px solid ${border}`, borderRadius: 24, padding: 20, boxShadow: ds.shadowMd }}
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 20 }}>
           <div>
             <h3 style={{ color: textPrimary, fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
-              <TrendingUp size={18} color="#8B5CF6" /> {isRTL ? "مبيعات الأسبوع" : "Weekly Sales"}
+              <TrendingUp size={18} color="#8B5CF6" /> {isRTL ? "تحليل المبيعات" : "Sales Analytics"}
             </h3>
-            <p style={{ color: textSecondary, fontSize: 13, marginTop: 4 }}>{isRTL ? "إجمالي المبيعات خلال 7 أيام" : "Total sales over 7 days"}</p>
+            <p style={{ color: textSecondary, fontSize: 13, marginTop: 4 }}>
+              {timeframe === "weekly" && (isRTL ? "إجمالي المبيعات الأسبوعية" : "Weekly sales analysis")}
+              {timeframe === "monthly" && (isRTL ? "إجمالي المبيعات الشهرية" : "Monthly sales analysis")}
+              {timeframe === "yearly" && (isRTL ? "إجمالي المبيعات السنوية" : "Yearly sales analysis")}
+            </p>
           </div>
-          <div style={{ background: "rgba(139, 92, 246, 0.1)", color: "#8B5CF6", padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
-            +24% {isRTL ? "نمو" : "Growth"}
+          
+          {/* Timeframe Selector Button Group */}
+          <div style={{ display: "flex", background: isDark ? ds.bg : "#F1F5F9", padding: 4, borderRadius: 12, gap: 4 }}>
+            {(["weekly", "monthly", "yearly"] as const).map((mode) => {
+              const active = timeframe === mode;
+              const modeLabel = {
+                weekly: isRTL ? "أسبوعي" : "Weekly",
+                monthly: isRTL ? "شهري" : "Monthly",
+                yearly: isRTL ? "سنوي" : "Yearly",
+              }[mode];
+
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setTimeframe(mode)}
+                  style={{
+                    border: "none",
+                    background: active ? (isDark ? ds.surface2 : "#FFFFFF") : "transparent",
+                    color: active ? "#8B5CF6" : ds.textSecondary,
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    fontFamily: "inherit",
+                    boxShadow: active ? "0 2px 6px rgba(0,0,0,0.05)" : "none",
+                  }}
+                >
+                  {modeLabel}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <div style={{ height: 220, width: "100%" }}>
+        <div style={{ height: 240, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={salesData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+            <AreaChart data={currentChartData} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
@@ -85,8 +145,18 @@ export function DashboardAnalytics() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? "#334155" : "#E2E8F0"} />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: textSecondary }} dy={10} />
+              <YAxis hide />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="sales" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
+              <Area type="monotone" dataKey="sales" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)">
+                {/* Always visible data point labels */}
+                <LabelList 
+                  dataKey="sales" 
+                  position="top" 
+                  offset={10} 
+                  style={{ fill: isDark ? "#F8FAFC" : "#1E293B", fontSize: 10, fontWeight: 800 }} 
+                  formatter={(v: number) => `${v.toLocaleString()} ر.ي`} 
+                />
+              </Area>
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -106,21 +176,24 @@ export function DashboardAnalytics() {
 
         <div style={{ height: 180, width: "100%" }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={topProductsData} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+            <BarChart data={topProductsData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
               <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: textPrimary, fontWeight: 600 }} width={isRTL ? 100 : 90} />
+              <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: textPrimary, fontWeight: 600 }} width={isRTL ? 110 : 90} />
               <Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} contentStyle={{ borderRadius: 12, border: 'none', boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }} />
               <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={24}>
                 {topProductsData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={["#10B981", "#3B82F6", "#F59E0B", "#8B5CF6"][index % 4]} />
                 ))}
+                {/* Show amounts directly on the bars */}
+                <LabelList dataKey="value" position="right" style={{ fill: textPrimary, fontSize: 11, fontWeight: 700 }} formatter={(v: number) => `${v} قطعة`} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </motion.div>
+
       {/* Grid for Low Stock and Recent Transactions */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
         
         {/* Low Stock Alerts */}
         <motion.div 

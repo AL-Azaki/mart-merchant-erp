@@ -9,7 +9,8 @@ import { TransactionFormSheet } from "../components/TransactionFormSheet";
 import { TransactionDetailsSheet } from "../components/TransactionDetailsSheet";
 import { ChartOfAccountsScreen } from "./ChartOfAccountsScreen";
 import { JournalEntriesScreen } from "./JournalEntriesScreen";
-import { Network, FileText as FileTextIcon, Columns } from "lucide-react";
+import { ReportsModule } from "@/features/reports/screens/ReportsModule";
+import { Network, FileText as FileTextIcon, Columns, PieChart } from "lucide-react";
 import { MOCK_JOURNAL_ENTRIES, MOCK_JOURNAL_LINES } from "@/core/data/financeMockData";
 import type { JournalEntry, JournalLine } from "@/core/types/finance";
 import { exportToExcel } from "@/core/utils/exportUtils";
@@ -40,7 +41,7 @@ export function FinanceModule({ onBack, initialAction = null }: { onBack?: () =>
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState<"income" | "expense" | null>(initialAction);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-  const [activeTab, setActiveTab] = useState<"cash" | "coa" | "journal">("cash");
+  const [activeTab, setActiveTab] = useState<"cash" | "coa" | "journal" | "reports">("cash");
 
   const filteredData = useMemo(() => {
     return transactions.filter(t => {
@@ -61,6 +62,7 @@ export function FinanceModule({ onBack, initialAction = null }: { onBack?: () =>
     { id: "cash", label: isRTL ? "الخزينة والمصروفات" : "Cash & Expenses", icon: Wallet, color: "#10B981" },
     { id: "coa", label: isRTL ? "دليل الحسابات" : "Chart of Accounts", icon: Network, color: "#3B82F6" },
     { id: "journal", label: isRTL ? "القيود اليومية" : "Journal Entries", icon: FileTextIcon, color: "#8B5CF6" },
+    { id: "reports", label: isRTL ? "التقارير" : "Reports", icon: PieChart, color: "#EC4899" },
   ] as const;
 
   const getCategoryName = (key: string) => {
@@ -244,6 +246,12 @@ export function FinanceModule({ onBack, initialAction = null }: { onBack?: () =>
           {activeTab === "journal" && (
             <motion.div key="journal" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ height: "100%" }}>
               <JournalEntriesScreen entries={entries} lines={lines} setEntries={setEntries} setLines={setLines} />
+            </motion.div>
+          )}
+
+          {activeTab === "reports" && (
+            <motion.div key="reports" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ height: "100%" }}>
+              <ReportsModule />
             </motion.div>
           )}
         </AnimatePresence>
