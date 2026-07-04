@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, Plus, Minus, Package, Coffee, ShoppingBag,
-  Utensils, Monitor, Droplet, PlusCircle, Trash2
+  Utensils, Monitor, Droplet, PlusCircle, Trash2, Mic, MicOff
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { MOCK_PRODUCT_UNITS, MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_INVENTORIES, buildCartLine, MOCK_UNITS } from "@/core/data/salesMockData";
@@ -29,6 +29,37 @@ export function ProductSelector({ cart, products = MOCK_PRODUCTS, onAddItem, onU
   const { t, isDark, isRTL, ds } = useApp();
   const [search, setSearch] = useState("");
   const [cat, setCat] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const startVoiceSearch = useCallback(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = isRTL ? "ar-SA" : "en-US";
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((r: any) => r[0].transcript)
+        .join("");
+      setSearch(transcript);
+    };
+
+    recognition.start();
+  }, [isListening, isRTL]);
 
   const cartMap = useMemo(() => new Map(cart.map(i => [i.product_unit.id, i])), [cart]);
 
@@ -76,9 +107,41 @@ export function ProductSelector({ cart, products = MOCK_PRODUCTS, onAddItem, onU
           <Search size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
-            placeholder={t.searchProducts}
-            style={{ width: "100%", height: 48, boxSizing: "border-box", paddingInlineStart: 46, paddingInlineEnd: 16, background: surface, border: `1.5px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 14, color: ds.textPrimary, fontSize: 15, fontWeight: 500, outline: "none", fontFamily: "inherit" }}
+            placeholder={isListening ? (isRTL ? "🎙️ جار الاستماع..." : "🎙️ Listening...") : t.searchProducts}
+            style={{
+              width: "100%", height: 48, boxSizing: "border-box",
+              paddingInlineStart: 46, paddingInlineEnd: 56,
+              background: isListening ? (isDark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.05)") : surface,
+              border: `1.5px solid ${isListening ? "#EF4444" : isDark ? ds.border : "#E2E8F0"}`,
+              borderRadius: 14, color: ds.textPrimary, fontSize: 15, fontWeight: 500, outline: "none", fontFamily: "inherit",
+              transition: "all 0.2s"
+            }}
           />
+          {/* Mic Button */}
+          <button
+            onClick={startVoiceSearch}
+            style={{
+              position: "absolute", top: "50%", transform: "translateY(-50%)",
+              [isRTL ? "left" : "right"]: 10,
+              width: 34, height: 34, borderRadius: 10,
+              background: isListening ? "#EF4444" : isDark ? ds.surface2 : "#F1F5F9",
+              border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "all 0.2s", boxShadow: isListening ? "0 0 0 4px rgba(239,68,68,0.2)" : "none",
+            }}
+            title={isRTL ? "البحث الصوتي" : "Voice Search"}
+          >
+            {isListening
+              ? <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}><Mic size={16} color="white" strokeWidth={2.5} /></motion.div>
+              : <Mic size={16} color={ds.textSecondary} strokeWidth={2.5} />
+            }
+          </button>
+          {/* Active listening indicator strip */}
+          {isListening && (
+            <motion.div
+              initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} exit={{ scaleX: 0 }}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,#EF4444,#F97316,#EF4444)", borderRadius: "0 0 14px 14px", transformOrigin: "left" }}
+            />
+          )}
         </div>
 
         {/* Categories */}

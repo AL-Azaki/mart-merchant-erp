@@ -7,7 +7,7 @@ import { OrdersListScreen } from "./OrdersListScreen";
 import { SalesReturnsScreen } from "./SalesReturnsScreen";
 import type { SalesInvoiceWithDetails } from "@/core/types/sales";
 import { useApp } from "@/providers/AppProvider";
-import { Receipt, ShoppingBag, RotateCcw } from "lucide-react";
+import { Receipt, ShoppingBag, RotateCcw, Plus } from "lucide-react";
 
 interface SalesModuleProps {
   initialView?: "main" | "new" | "detail";
@@ -49,8 +49,55 @@ export function SalesModule({ initialView = "main", customers = [], products = [
               <h1 style={{ color: ds.textPrimary, fontSize: 24, fontWeight: 800, marginBottom: 16 }}>
                 {isRTL ? "المبيعات والطلبات" : "Sales & Orders"}
               </h1>
-              
-              <div style={{ display: "flex", gap: 24, overflowX: "auto", borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, marginBottom: "-1px" }}>
+
+              {/* ─── Tab bar: CTA first, then nav tabs ───
+                  Visible order: [فاتورة جديدة] | [فواتير المبيعات] [طلبات المتجر] [مرتجعات المبيعات]
+              */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-end",
+                  gap: 12,
+                  overflowX: "auto",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
+                  marginBottom: "-1px",
+                }}
+              >
+                {/* Hide webkit scrollbar specifically for this container */}
+                <style>{`
+                  div::-webkit-scrollbar {
+                    display: none;
+                  }
+                `}</style>
+
+                {/* PRIMARY CTA — فاتورة جديدة */}
+                <button
+                  onClick={() => setView("new")}
+                  style={{
+                    background: "none", border: "none",
+                    padding: "12px 20px",
+                    cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 10,
+                    fontFamily: "inherit",
+                    position: "relative",
+                    color: ds.primary,
+                    fontWeight: 700,
+                    fontSize: 16,
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    borderRadius: "12px 12px 0 0",
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = "rgba(37,99,235,0.05)"}
+                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
+                >
+                  <Plus size={20} strokeWidth={2.5} />
+                  {isRTL ? "فاتورة جديدة" : "New Invoice"}
+                </button>
+
+                {/* Navigation Tabs */}
                 {tabs.map((tab) => {
                   const isActive = activeTab === tab.id;
                   const Icon = tab.icon;
@@ -59,20 +106,35 @@ export function SalesModule({ initialView = "main", customers = [], products = [
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       style={{
-                        background: "none", border: "none", padding: "0 4px 12px", cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit",
+                        background: "none", border: "none",
+                        padding: "12px 20px",
+                        cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 10,
+                        fontFamily: "inherit",
                         position: "relative",
                         color: isActive ? ds.primary : ds.textSecondary,
-                        fontWeight: isActive ? 700 : 600,
-                        fontSize: 15, transition: "color 0.2s"
+                        fontWeight: isActive ? 800 : 600,
+                        fontSize: 16,
+                        transition: "all 0.2s",
+                        whiteSpace: "nowrap",
+                        flexShrink: 0,
+                        borderRadius: "12px 12px 0 0",
                       }}
+                      onMouseOver={(e) => !isActive && (e.currentTarget.style.color = ds.textPrimary)}
+                      onMouseOut={(e) => !isActive && (e.currentTarget.style.color = ds.textSecondary)}
                     >
-                      <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                      <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                       {tab.label}
                       {isActive && (
                         <motion.div
                           layoutId="salesTabIndicator"
-                          style={{ position: "absolute", bottom: -1, left: 0, right: 0, height: 3, background: ds.primary, borderRadius: "3px 3px 0 0" }}
+                          style={{
+                            position: "absolute",
+                            bottom: -1, left: 0, right: 0,
+                            height: 4,
+                            background: ds.primary,
+                            borderRadius: "4px 4px 0 0",
+                          }}
                         />
                       )}
                     </button>

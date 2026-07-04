@@ -13,12 +13,13 @@ interface SelectCustomerSheetProps {
   selected: Customer | null;
   onSelect: (c: Customer | null) => void;
   onClose: () => void;
+  onAddNew?: () => void;
 }
 
-export function SelectCustomerSheet({ customers, selected, onSelect, onClose }: SelectCustomerSheetProps) {
+export function SelectCustomerSheet({ customers, selected, onSelect, onClose, onAddNew }: SelectCustomerSheetProps) {
   const { t, isDark, isRTL, ds } = useApp();
   const [search, setSearch] = useState("");
-  const BackIcon = isRTL ? ArrowRight : ArrowLeft;
+  const BackIcon = X;
 
   const filtered = useMemo(() =>
     customers.filter((c) =>
@@ -27,25 +28,40 @@ export function SelectCustomerSheet({ customers, selected, onSelect, onClose }: 
     ), [search, customers]);
 
   return (
-    <motion.div
-      initial={{ y: "100%" }}
-      animate={{ y: 0 }}
-      exit={{ y: "100%" }}
-      transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      style={{
-        position: "absolute", inset: 0, zIndex: 100,
-        background: isDark ? ds.bg : "#F8FAFC",
-        display: "flex", flexDirection: "column",
-      }}
-    >
-      {/* Header */}
-      <div style={{ background: "linear-gradient(150deg,#1E3A8A,#2563EB)", padding: "56px 20px 24px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <button onClick={onClose} style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <BackIcon size={18} color="white" />
-          </button>
-          <h2 style={{ color: "white", fontSize: 20, fontWeight: 800 }}>{t.selectCustomer}</h2>
-        </div>
+    <div style={{ position: "fixed", inset: 0, zIndex: 999999, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: "spring", damping: 26, stiffness: 300 }}
+        style={{
+          position: "relative", width: "100%", maxWidth: 500, maxHeight: "85vh",
+          background: isDark ? ds.bg : "#F8FAFC",
+          borderRadius: 24, display: "flex", flexDirection: "column",
+          boxShadow: "0 24px 50px rgba(0,0,0,0.3)", border: `1px solid ${isDark ? ds.border : "rgba(255,255,255,0.5)"}`, overflow: "hidden"
+        }}
+      >
+        {/* Header */}
+        <div style={{ background: "linear-gradient(135deg,#1E3A8A,#2563EB)", padding: "20px 24px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Users size={20} color="white" />
+              </div>
+              <h2 style={{ color: "white", fontSize: 20, fontWeight: 800, margin: 0 }}>{t.selectCustomer}</h2>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {onAddNew && (
+                <button onClick={onAddNew} style={{ width: 36, height: 36, borderRadius: 18, background: "rgba(255,255,255,0.15)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(255,255,255,0.25)"} onMouseOut={e=>e.currentTarget.style.background="rgba(255,255,255,0.15)"}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+              )}
+              <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 18, background: "rgba(255,255,255,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(239,68,68,0.8)"} onMouseOut={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"}>
+                <BackIcon size={18} color="white" />
+              </button>
+            </div>
+          </div>
         <div style={{ position: "relative" }}>
           <Search size={15} color="rgba(255,255,255,0.7)" style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
           <input
@@ -116,6 +132,7 @@ export function SelectCustomerSheet({ customers, selected, onSelect, onClose }: 
           </motion.button>
         ))}
       </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

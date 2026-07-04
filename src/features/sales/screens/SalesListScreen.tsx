@@ -73,81 +73,144 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: isDark ? ds.bg : "#F8FAFC" }}>
-      {/* Header */}
-      <div style={{ padding: "20px 24px 16px", background: isDark ? ds.surface : "#FFFFFF", borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, flexShrink: 0 }}>
+
+      {/* ═══════════════════════════════════════════════════
+          HEADER — Title + Primary CTA in one prominent row
+          ═══════════════════════════════════════════════════ */}
+      <div style={{
+        padding: "20px 24px 16px",
+        background: isDark ? ds.surface : "#FFFFFF",
+        borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
+        flexShrink: 0,
+      }}>
+        {/* Row 1: Page title (left) + New Invoice CTA (right) — always visible, primary hierarchy */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+
+          {/* Title block */}
           <div>
-            <h1 style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 800 }}>{t.allInvoices}</h1>
-            <p style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 500, marginTop: 4 }}>{t.salesTitle}</p>
+            <h1 style={{ color: ds.textPrimary, fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: -0.3 }}>
+              {t.allInvoices}
+            </h1>
+            <p style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 500, marginTop: 3, marginBottom: 0 }}>
+              {t.salesTitle}
+            </p>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={onNewInvoice}
-            style={{
-              height: 44, background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
-              border: "none", borderRadius: 12, padding: "0 16px", color: "white",
-              fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 8,
-              cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(37,99,235,0.25)"
-            }}
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            {t.newInvoice}
-          </motion.button>
         </div>
 
-        {/* Compact Summary Row */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1, background: isDark ? ds.surface2 : "#F8FAFC", borderRadius: 12, padding: "12px 16px", border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        {/* Row 2: Summary KPI cards */}
+        <div style={{ display: "flex", gap: 10 }}>
+
+          {/* Revenue card */}
+          <div style={{
+            flex: 1,
+            background: isDark ? ds.surface2 : "#F8FAFC",
+            borderRadius: 14,
+            padding: "12px 14px",
+            border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(16,185,129,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <TrendingUp size={16} color="#10B981" strokeWidth={2.5} />
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "rgba(16,185,129,0.13)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <TrendingUp size={17} color="#10B981" strokeWidth={2.5} />
               </div>
-              <span style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 600 }}>
+              <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600 }}>
                 {isRTL ? "إجمالي الإيرادات" : "Total Revenue"}
               </span>
             </div>
             <div style={{ textAlign: isRTL ? "left" : "right" }}>
-              <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>
+              <span style={{ color: "#10B981", fontSize: 16, fontWeight: 800 }}>
                 {todayTotal.toLocaleString()}
               </span>
               <span style={{ color: ds.textMuted, fontSize: 11, marginInlineStart: 4 }}>{currency}</span>
             </div>
           </div>
-          
-          <div style={{ flex: 1, background: isDark ? ds.surface2 : "#F8FAFC", borderRadius: 12, padding: "12px 16px", border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+          {/* Pending card */}
+          <div style={{
+            flex: 1,
+            background: isDark ? ds.surface2 : "#F8FAFC",
+            borderRadius: 14,
+            padding: "12px 14px",
+            border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(245,158,11,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Clock size={16} color="#F59E0B" strokeWidth={2.5} />
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "rgba(245,158,11,0.13)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Clock size={17} color="#F59E0B" strokeWidth={2.5} />
               </div>
-              <span style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 600 }}>
+              <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600 }}>
                 {isRTL ? "معلقة" : "Pending"}
               </span>
             </div>
             <div style={{ textAlign: isRTL ? "left" : "right" }}>
-              <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>{pendingCount}</span>
+              <span style={{ color: "#F59E0B", fontSize: 16, fontWeight: 800 }}>{pendingCount}</span>
+              <span style={{ color: ds.textMuted, fontSize: 11, marginInlineStart: 4 }}>{t.invoices}</span>
+            </div>
+          </div>
+
+          {/* Total invoices card */}
+          <div style={{
+            flex: 1,
+            background: isDark ? ds.surface2 : "#F8FAFC",
+            borderRadius: 14,
+            padding: "12px 14px",
+            border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: 10,
+                background: "rgba(37,99,235,0.12)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <ArrowUpRight size={17} color="#2563EB" strokeWidth={2.5} />
+              </div>
+              <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600 }}>
+                {isRTL ? "الكل" : "All"}
+              </span>
+            </div>
+            <div style={{ textAlign: isRTL ? "left" : "right" }}>
+              <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>
+                {MOCK_SALES_INVOICES.length}
+              </span>
               <span style={{ color: ds.textMuted, fontSize: 11, marginInlineStart: 4 }}>{t.invoices}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Search + filter */}
-      <div style={{ padding: "20px 20px 0", flexShrink: 0 }}>
+      {/* ═══════════════════════════════════════
+          SEARCH + FILTER TABS
+          ═══════════════════════════════════════ */}
+      <div style={{ padding: "16px 20px 0", flexShrink: 0 }}>
+
         {/* Search input */}
-        <div style={{ position: "relative", marginBottom: 16 }}>
-          <Search size={16} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <Search size={16} color={ds.textMuted} style={{
+            position: "absolute", top: "50%", transform: "translateY(-50%)",
+            [isRTL ? "right" : "left"]: 14, pointerEvents: "none",
+          }} />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.searchInvoices}
             style={{
-              width: "100%", height: 46, boxSizing: "border-box",
-              paddingInlineStart: 44, paddingInlineEnd: 16,
+              width: "100%", height: 44, boxSizing: "border-box",
+              paddingInlineStart: 44, paddingInlineEnd: 14,
               background: isDark ? ds.surface : "#FFFFFF",
               border: `1.5px solid ${isDark ? ds.border : "#E2E8F0"}`,
-              borderRadius: 14, color: ds.textPrimary, fontSize: 14,
+              borderRadius: 12,
+              color: ds.textPrimary, fontSize: 14,
               outline: "none", fontFamily: "inherit",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              boxShadow: "0 1px 6px rgba(0,0,0,0.04)",
             }}
           />
         </div>
@@ -160,14 +223,15 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
               whileTap={{ scale: 0.95 }}
               onClick={() => setActiveFilter(tab.key)}
               style={{
-                whiteSpace: "nowrap", padding: "8px 16px",
+                whiteSpace: "nowrap",
+                padding: "7px 16px",
                 background: activeFilter === tab.key ? "#2563EB" : isDark ? ds.surface : "#FFFFFF",
                 color: activeFilter === tab.key ? "white" : ds.textSecondary,
                 border: `1px solid ${activeFilter === tab.key ? "#2563EB" : isDark ? ds.border : "#E2E8F0"}`,
                 borderRadius: 10, fontSize: 13, fontWeight: 600,
                 cursor: "pointer", fontFamily: "inherit",
-                boxShadow: activeFilter === tab.key ? "0 4px 12px rgba(37, 99, 235, 0.3)" : "none",
-                transition: "all 0.2s",
+                boxShadow: activeFilter === tab.key ? "0 4px 12px rgba(37,99,235,0.28)" : "none",
+                transition: "all 0.18s ease",
               }}
             >
               {tab.label}
