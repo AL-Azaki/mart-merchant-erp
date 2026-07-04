@@ -46,15 +46,15 @@ export function SalesReturnFormSheet({ returnRecord, onClose }: SalesReturnFormS
   const totalReturned = items.reduce((sum, item) => sum + (item.qty_returned * item.price), 0);
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", justifyContent: isRTL ? "flex-start" : "flex-end" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
         style={{ position: "absolute", inset: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(6px)" }} />
       
-      <motion.div initial={{ x: isRTL ? "-100%" : "100%" }} animate={{ x: 0 }} exit={{ x: isRTL ? "-100%" : "100%" }} transition={{ type: "spring", damping: 28, stiffness: 220 }}
-        style={{ position: "relative", width: "100%", maxWidth: 650, background: bg, height: "100%", display: "flex", flexDirection: "column", boxShadow: "-10px 0 40px rgba(0,0,0,0.15)" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        style={{ position: "relative", width: "100%", maxWidth: 600, background: bg, maxHeight: "90vh", borderRadius: 24, display: "flex", flexDirection: "column", boxShadow: "0 24px 50px rgba(0,0,0,0.3)", overflow: "hidden", border: `1px solid ${isDark ? ds.border : "rgba(255,255,255,0.5)"}` }}>
         
         {/* Header */}
-        <div style={{ padding: "24px 32px", background: surface, borderBottom: `1px solid ${border}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ padding: "24px", background: surface, borderBottom: `1px solid ${border}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, #EF4444, #DC2626)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)" }}>
               <RotateCcw size={22} color="white" strokeWidth={2.5} />
@@ -74,7 +74,7 @@ export function SalesReturnFormSheet({ returnRecord, onClose }: SalesReturnFormS
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 32 }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           
           {step === 1 && !returnRecord && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -170,7 +170,7 @@ export function SalesReturnFormSheet({ returnRecord, onClose }: SalesReturnFormS
         </div>
 
         {/* Footer */}
-        <div style={{ padding: "20px 32px", background: surface, borderTop: `1px solid ${border}`, flexShrink: 0 }}>
+        <div style={{ padding: "20px 24px", background: surface, borderTop: `1px solid ${border}`, flexShrink: 0 }}>
           {!returnRecord ? (
             <button 
               onClick={onClose}

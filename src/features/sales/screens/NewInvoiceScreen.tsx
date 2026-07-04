@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, ArrowRight, User, ShoppingCart, ChevronDown,
   Trash2, CreditCard, Banknote, Smartphone, Clock, Check,
-  Share2, Printer, X, Plus, Minus
+  Share2, Printer, X, Plus, Minus, Package, RotateCcw
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { SelectCustomerSheet } from "../components/SelectCustomerSheet";
 import { ContactFormSheet } from "@/features/crm/components/ContactFormSheet";
 import { ProductSelector } from "../components/ProductSelector";
+import { SalesReturnsScreen } from "./SalesReturnsScreen";
 import { buildCartLine, nextInvoiceNumber, MOCK_SALES_INVOICES } from "@/core/data/salesMockData";
 import { MOCK_BUSINESS } from "@/core/data/mockData";
 import type { Customer, CartLine } from "@/core/types/sales";
@@ -24,7 +25,7 @@ const PAY_METHODS: { key: PaymentMethodType; icon: any; labelKey: string; color:
 
 type Step = "build" | "payment" | "success";
 
-export function NewInvoiceScreen({ customers = [], products = [], onBack, onSuccess }: { customers?: any[]; products?: any[]; onBack: () => void; onSuccess: () => void }) {
+export function NewInvoiceScreen({ customers = [], products = [], onSuccess, onReturnsClick }: { customers?: any[]; products?: any[]; onSuccess: () => void; onReturnsClick?: () => void }) {
   const { t, isDark, isRTL, ds } = useApp();
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
 
@@ -32,6 +33,7 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
   const [showCustomer, setShowCustomer] = useState(false);
   const [showNewCustomer, setShowNewCustomer] = useState(false);
   const [showCartDrawer, setShowCartDrawer] = useState(false);
+  const [showReturnsList, setShowReturnsList] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [payMethod, setPayMethod] = useState<PaymentMethodType>("Cash");
@@ -46,6 +48,37 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
 
   const [globalDiscountType, setGlobalDiscountType] = useState<"percentage" | "fixed">("percentage");
   const [globalDiscountValue, setGlobalDiscountValue] = useState("");
+
+  // --- Hold Invoice State ---
+  interface HeldInvoice {
+    id: string;
+    time: string;
+    cart: CartLine[];
+    customer: Customer | null;
+  }
+  const [heldInvoices, setHeldInvoices] = useState<HeldInvoice[]>([]);
+  const [showHeldDrawer, setShowHeldDrawer] = useState(false);
+
+  const holdCurrentInvoice = () => {
+    if (cart.length === 0) return;
+    setHeldInvoices(prev => [{
+      id: `HLD-${Date.now().toString().slice(-6)}`,
+      time: new Date().toLocaleTimeString(isRTL ? "ar-YE" : "en-US", { hour: "2-digit", minute: "2-digit" }),
+      cart,
+      customer
+    }, ...prev]);
+    setCart([]);
+    setCustomer(null);
+    setGlobalDiscountValue("");
+  };
+
+  const resumeInvoice = (held: HeldInvoice) => {
+    setCart(held.cart);
+    setCustomer(held.customer);
+    setHeldInvoices(prev => prev.filter(h => h.id !== held.id));
+    setShowHeldDrawer(false);
+  };
+  // --------------------------
 
   const currency = "YER";
   
@@ -135,17 +168,32 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
       {/* Top Bar */}
       <div style={{ background: "linear-gradient(135deg,#1E3A8A,#2563EB)", padding: "0 24px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, boxShadow: "0 2px 12px rgba(37,99,235,0.25)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.2)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <BackIcon size={20} color="white" />
-          </button>
           <div>
             <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 500, margin: 0 }}>{t.newInvoice}</p>
             <p style={{ color: "white", fontSize: 16, fontWeight: 800, margin: 0, direction: "ltr" }}>{invoiceNumber}</p>
           </div>
         </div>
-        {/* Customer picker in header — unified smart button */}
-        <div style={{ display: "flex", alignItems: "center", height: 46 }}>
-          <div style={{ display: "flex", alignItems: "stretch", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 14, overflow: "hidden", height: "100%" }}>
+        
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Sales Returns Button inside POS */}
+          <button onClick={() => setShowReturnsList(true)} style={{ display: "flex", alignItems: "center", gap: 8, height: 46, padding: "0 16px", background: "rgba(239, 68, 68, 0.15)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 14, color: "#FECACA", fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(239, 68, 68, 0.25)"} onMouseOut={e=>e.currentTarget.style.background="rgba(239, 68, 68, 0.15)"}>
+            <RotateCcw size={16} /> {isRTL ? "المرتجعات" : "Returns"}
+          </button>
+
+          {/* Held Invoices Buttons */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", padding: "4px", borderRadius: 12 }}>
+            <button onClick={() => setShowHeldDrawer(true)} style={{ position: "relative", height: 38, padding: "0 12px", background: "transparent", border: "none", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, borderRadius: 8 }}>
+              <Clock size={16} /> {isRTL ? "المعلقة" : "Held"}
+              {heldInvoices.length > 0 && <div style={{ position: "absolute", top: -4, right: -4, background: "#EF4444", color: "white", fontSize: 10, fontWeight: 800, width: 18, height: 18, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #1E3A8A" }}>{heldInvoices.length}</div>}
+            </button>
+            <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.2)" }} />
+            <button onClick={holdCurrentInvoice} disabled={cart.length === 0} style={{ height: 38, padding: "0 12px", background: cart.length === 0 ? "transparent" : "rgba(245, 158, 11, 0.2)", border: "none", color: cart.length === 0 ? "rgba(255,255,255,0.4)" : "#FCD34D", fontSize: 13, fontWeight: 700, cursor: cart.length === 0 ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: 6, borderRadius: 8, transition: "0.2s" }}>
+              <Package size={16} /> {isRTL ? "تعليق" : "Hold"}
+            </button>
+          </div>
+
+          {/* Customer picker in header — unified smart button */}
+          <div style={{ display: "flex", alignItems: "stretch", background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 14, overflow: "hidden", height: 46 }}>
             {/* Main: Select Customer */}
             <button onClick={() => setShowCustomer(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 14px", background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
               <div style={{ width: 28, height: 28, borderRadius: 8, background: customer ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -611,6 +659,59 @@ export function NewInvoiceScreen({ customers = [], products = [], onBack, onSucc
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showHeldDrawer && (
+          <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowHeldDrawer(false)}
+              style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }} />
+            
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              style={{ position: "relative", width: "100%", maxWidth: 480, maxHeight: "80vh", background: surface, borderRadius: 24, display: "flex", flexDirection: "column", boxShadow: "0 24px 50px rgba(0,0,0,0.3)", border: `1px solid ${isDark ? ds.border : "rgba(255,255,255,0.5)"}`, overflow: "hidden" }}>
+              
+              <div style={{ padding: "20px 24px", background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Clock size={24} color="#F59E0B" />
+                  <span style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>{isRTL ? "الفواتير المعلقة" : "Held Invoices"}</span>
+                </div>
+                <button onClick={() => setShowHeldDrawer(false)} style={{ background: "transparent", border: "none", cursor: "pointer" }}><X size={20} color={ds.textSecondary} /></button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: "auto", padding: 24, background: isDark ? ds.bg : "#FFFFFF" }}>
+                {heldInvoices.length === 0 ? (
+                  <div style={{ textAlign: "center", color: ds.textMuted, padding: "40px 0" }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: 16 }} />
+                    <p style={{ fontSize: 16, fontWeight: 600 }}>{isRTL ? "لا توجد فواتير معلقة" : "No held invoices"}</p>
+                  </div>
+                ) : (
+                  heldInvoices.map(hi => (
+                    <div key={hi.id} style={{ marginBottom: 16, background: isDark ? ds.surface : "#F8FAFC", borderRadius: 16, padding: 16, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                        <span style={{ fontWeight: 800, color: ds.textPrimary, fontSize: 15 }}>{hi.id}</span>
+                        <span style={{ fontSize: 12, color: ds.textSecondary, background: isDark ? ds.surface2 : "#E2E8F0", padding: "4px 8px", borderRadius: 6 }}>{hi.time}</span>
+                      </div>
+                      <div style={{ color: ds.textSecondary, fontSize: 13, marginBottom: 16 }}>
+                        <p style={{ margin: "0 0 4px 0" }}>{isRTL ? "العميل:" : "Customer:"} <strong style={{ color: ds.textPrimary }}>{hi.customer?.customer_name || (isRTL ? "كاش" : "Cash")}</strong></p>
+                        <p style={{ margin: 0 }}>{isRTL ? "عدد المنتجات:" : "Items:"} <strong style={{ color: ds.textPrimary }}>{hi.cart.length}</strong></p>
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => resumeInvoice(hi)} style={{ flex: 1, height: 40, background: "#2563EB", color: "white", border: "none", borderRadius: 10, fontWeight: 700, cursor: "pointer" }}>{isRTL ? "استكمال" : "Resume"}</button>
+                        <button onClick={() => setHeldInvoices(p => p.filter(h => h.id !== hi.id))} style={{ width: 40, height: 40, background: "rgba(239,68,68,0.1)", color: "#EF4444", border: "none", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Trash2 size={18} /></button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showReturnsList && (
+          <SalesReturnsScreen onBack={() => setShowReturnsList(false)} />
         )}
       </AnimatePresence>
 

@@ -15,21 +15,21 @@ interface SalesModuleProps {
   products?: any[];
 }
 
-type SalesView = "main" | "new" | "detail";
+type SalesView = "main" | "detail" | "returns";
 
 export function SalesModule({ initialView = "main", customers = [], products = [] }: SalesModuleProps) {
   const { t, isDark, isRTL, ds } = useApp();
-  const [view, setView] = useState<SalesView>(initialView);
-  const [activeTab, setActiveTab] = useState<"invoices" | "orders" | "returns">("invoices");
+  const [view, setView] = useState<SalesView>(initialView === "new" ? "main" : initialView as SalesView);
+  const [activeTab, setActiveTab] = useState<"new" | "invoices" | "orders">(initialView === "new" ? "new" : "invoices");
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoiceWithDetails | null>(null);
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
 
   const tabs = [
+    { id: "new", label: isRTL ? "فاتورة جديدة" : "New Invoice", icon: Plus },
     { id: "invoices", label: isRTL ? "فواتير المبيعات" : "Sales Invoices", icon: Receipt },
     { id: "orders", label: isRTL ? "طلبات المتجر الإلكتروني" : "E-commerce Orders", icon: ShoppingBag },
-    { id: "returns", label: isRTL ? "مرتجعات المبيعات" : "Sales Returns", icon: RotateCcw },
   ] as const;
 
   return (
@@ -50,9 +50,7 @@ export function SalesModule({ initialView = "main", customers = [], products = [
                 {isRTL ? "المبيعات والطلبات" : "Sales & Orders"}
               </h1>
 
-              {/* ─── Tab bar: CTA first, then nav tabs ───
-                  Visible order: [فاتورة جديدة] | [فواتير المبيعات] [طلبات المتجر] [مرتجعات المبيعات]
-              */}
+              {/* ─── Tab bar ─── */}
               <div
                 style={{
                   display: "flex",
@@ -71,31 +69,6 @@ export function SalesModule({ initialView = "main", customers = [], products = [
                     display: none;
                   }
                 `}</style>
-
-                {/* PRIMARY CTA — فاتورة جديدة */}
-                <button
-                  onClick={() => setView("new")}
-                  style={{
-                    background: "none", border: "none",
-                    padding: "12px 20px",
-                    cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 10,
-                    fontFamily: "inherit",
-                    position: "relative",
-                    color: ds.primary,
-                    fontWeight: 700,
-                    fontSize: 16,
-                    transition: "all 0.2s",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    borderRadius: "12px 12px 0 0",
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.background = "rgba(37,99,235,0.05)"}
-                  onMouseOut={(e) => e.currentTarget.style.background = "none"}
-                >
-                  <Plus size={20} strokeWidth={2.5} />
-                  {isRTL ? "فاتورة جديدة" : "New Invoice"}
-                </button>
 
                 {/* Navigation Tabs */}
                 {tabs.map((tab) => {
@@ -154,9 +127,17 @@ export function SalesModule({ initialView = "main", customers = [], products = [
                   transition={{ duration: 0.2 }}
                   style={{ position: "absolute", inset: 0 }}
                 >
+                  {activeTab === "new" && (
+                    <NewInvoiceScreen
+                      customers={customers}
+                      products={products}
+                      onSuccess={() => setActiveTab("invoices")}
+                      onReturnsClick={() => setView("returns")}
+                    />
+                  )}
                   {activeTab === "invoices" && (
                     <SalesListScreen
-                      onNewInvoice={() => setView("new")}
+                      onNewInvoice={() => setActiveTab("new")}
                       onViewInvoice={(inv) => {
                         setSelectedInvoice(inv);
                         setView("detail");
@@ -164,28 +145,22 @@ export function SalesModule({ initialView = "main", customers = [], products = [
                     />
                   )}
                   {activeTab === "orders" && <OrdersListScreen />}
-                  {activeTab === "returns" && <SalesReturnsScreen />}
                 </motion.div>
               </AnimatePresence>
             </div>
           </motion.div>
         )}
 
-        {view === "new" && (
+        {view === "returns" && (
           <motion.div
-            key="new"
+            key="returns"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 40 }}
             transition={{ duration: 0.22 }}
-            style={{ position: "absolute", inset: 0, zIndex: 10 }}
+            style={{ position: "absolute", inset: 0, zIndex: 10, background: bg }}
           >
-            <NewInvoiceScreen
-              customers={customers}
-              products={products}
-              onBack={() => setView("main")}
-              onSuccess={() => setView("main")}
-            />
+            <SalesReturnsScreen onBack={() => setView("main")} />
           </motion.div>
         )}
 
