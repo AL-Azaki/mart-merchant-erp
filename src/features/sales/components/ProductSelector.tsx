@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, Plus, Minus, Package, Coffee, ShoppingBag,
@@ -63,6 +63,46 @@ export function ProductSelector({ cart, products = MOCK_PRODUCTS, onAddItem, onU
 
   const cartMap = useMemo(() => new Map(cart.map(i => [i.product_unit.id, i])), [cart]);
 
+  function handleAdd(pu: ProductUnit) {
+    const ex = cartMap.get(pu.id);
+    if (ex) onUpdateQty(pu.id, 1);
+    else onAddItem(buildCartLine(pu as any, "wh_001", 1, pu.selling_price, 0, 0));
+  }
+
+  // --- Barcode Scanner Logic ---
+  const barcodeBuffer = useRef("");
+  const barcodeTimeout = useRef<any>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === "Enter") {
+        if (barcodeBuffer.current.length > 2) {
+          const code = barcodeBuffer.current;
+          barcodeBuffer.current = "";
+          
+          const allUnits = products.flatMap(p => {
+            const units = p.mock_units || MOCK_PRODUCT_UNITS.filter(u => u.product_id === p.id);
+            return units.map((u: any) => ({ ...u, _product: p }));
+          });
+
+          const foundUnit = allUnits.find(pu => pu.barcode === code || pu.sku === code);
+          if (foundUnit) handleAdd(foundUnit);
+        }
+      } else if (e.key.length === 1) {
+        barcodeBuffer.current += e.key;
+        if (barcodeTimeout.current) clearTimeout(barcodeTimeout.current);
+        barcodeTimeout.current = setTimeout(() => {
+          barcodeBuffer.current = "";
+        }, 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [products, cartMap, onAddItem, onUpdateQty]);
+
   const displayUnits = useMemo(() => {
     // Collect all units from all products (including custom mock_units)
     const allUnits = products.flatMap(p => {
@@ -79,12 +119,6 @@ export function ProductSelector({ cart, products = MOCK_PRODUCTS, onAddItem, onU
       return p.product_name.toLowerCase().includes(q) || (pu.barcode ?? "").includes(q) || (pu.sku ?? "").toLowerCase().includes(q);
     });
   }, [search, cat, products]);
-
-  function handleAdd(pu: ProductUnit) {
-    const ex = cartMap.get(pu.id);
-    if (ex) onUpdateQty(pu.id, 1);
-    else onAddItem(buildCartLine(pu as any, "wh_001", 1, pu.selling_price, 0, 0));
-  }
 
   const getStock = (puId: string) => {
      const inv = MOCK_INVENTORIES.filter(i => i.product_unit_id === puId);

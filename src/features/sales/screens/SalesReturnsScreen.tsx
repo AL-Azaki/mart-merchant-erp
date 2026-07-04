@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Search, Filter, RotateCcw, Plus, Eye } from "lucide-react";
+import { Search, Filter, RotateCcw, Plus, Eye, ArrowRight, ArrowLeft } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { SalesReturnFormSheet } from "../components/SalesReturnFormSheet";
 
@@ -9,8 +9,9 @@ const MOCK_RETURNS = [
   { id: "ret_2", return_number: "RET-2023-0002", invoice_number: "INV-2023-1054", date: new Date(Date.now() - 86400000).toISOString(), total: 45.0, status: "Pending" },
 ];
 
-export function SalesReturnsScreen() {
+export function SalesReturnsScreen({ onBack }: { onBack?: () => void }) {
   const { t, isDark, isRTL, ds } = useApp();
+  const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const [search, setSearch] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedReturn, setSelectedReturn] = useState<any>(null);
@@ -20,11 +21,24 @@ export function SalesReturnsScreen() {
   const border = isDark ? ds.border : "#E2E8F0";
 
   return (
-    <div style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 99998, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onBack}
+        style={{ position: "absolute", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(8px)" }} />
+        
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        style={{ position: "relative", width: "100%", maxWidth: 1000, background: bg, height: "90vh", borderRadius: 24, display: "flex", flexDirection: "column", boxShadow: "0 24px 50px rgba(0,0,0,0.3)", overflow: "hidden", border: `1px solid ${isDark ? ds.border : "rgba(255,255,255,0.5)"}` }}>
+        <div style={{ padding: 24, display: "flex", flexDirection: "column", height: "100%" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h2 style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 800, margin: "0 0 4px 0" }}>{isRTL ? "مرتجعات المبيعات" : "Sales Returns"}</h2>
-          <p style={{ color: ds.textSecondary, fontSize: 13, margin: 0 }}>{isRTL ? "إدارة عمليات الاسترجاع وإصدار إشعارات دائنة" : "Manage return operations and issue credit notes"}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {onBack && (
+            <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 12, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: ds.textPrimary }}>
+              <BackIcon size={20} />
+            </button>
+          )}
+          <div>
+            <h2 style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 800, margin: "0 0 4px 0" }}>{isRTL ? "مرتجعات المبيعات" : "Sales Returns"}</h2>
+            <p style={{ color: ds.textSecondary, fontSize: 13, margin: 0 }}>{isRTL ? "إدارة عمليات الاسترجاع وإصدار إشعارات دائنة" : "Manage return operations and issue credit notes"}</p>
+          </div>
         </div>
         <button 
           onClick={() => { setSelectedReturn(null); setIsFormOpen(true); }}
@@ -89,6 +103,8 @@ export function SalesReturnsScreen() {
           />
         )}
       </AnimatePresence>
+        </div>
+      </motion.div>
     </div>
   );
 }
