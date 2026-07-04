@@ -48,6 +48,9 @@ export function ProductFormSheet({ product, onClose, onSave }: ProductFormSheetP
   const [activeTab, setActiveTab] = useState<"basic" | "units" | "channels">("basic");
   const [unitToDelete, setUnitToDelete] = useState<string | null>(null);
 
+  const defaultSysUnit = MOCK_UNITS.find(u => u.is_default) || MOCK_UNITS[0];
+  const defaultUnitId = defaultSysUnit?.id || "";
+
   const [formData, setFormData] = useState<ProductFormData>({
     id: product?.id,
     name: product?.product_name || product?.name || "",
@@ -59,7 +62,7 @@ export function ProductFormSheet({ product, onClose, onSave }: ProductFormSheetP
     images: product?.images || [],
     track_stock: product?.track_stock ?? true,
     units: product?.units || [
-      { id: Date.now().toString(), unit_id: MOCK_UNITS[0]?.id || "", is_base_unit: true, conversion_factor: 1, barcode: "", sku: "", purchase_price: 0, selling_price: 0, minimum_price: 0 }
+      { id: Date.now().toString(), unit_id: defaultUnitId, is_base_unit: true, conversion_factor: 1, barcode: "", sku: "", purchase_price: 0, selling_price: 0, minimum_price: 0 }
     ],
     channels: product?.channels || [
       { channel_id: "ch_pos", channel_name: isRTL ? "نقطة البيع (POS)" : "POS", is_enabled: true, sale_price: 0 },
@@ -104,6 +107,26 @@ export function ProductFormSheet({ product, onClose, onSave }: ProductFormSheetP
       ...prev,
       units: prev.units.map(u => u.id === id ? { ...u, [field]: value } : u)
     }));
+  };
+
+  const setAsBaseUnit = (id: string) => {
+    setFormData(prev => {
+      const updatedUnits = prev.units.map(u => {
+        if (u.id === id) {
+          return { ...u, is_base_unit: true, conversion_factor: 1 };
+        } else {
+          return { ...u, is_base_unit: false };
+        }
+      });
+      // Move the base unit to index 0
+      const baseIdx = updatedUnits.findIndex(u => u.is_base_unit);
+      if (baseIdx > 0) {
+        const [base] = updatedUnits.splice(baseIdx, 1);
+        updatedUnits.unshift(base);
+      }
+      return { ...prev, units: updatedUnits };
+    });
+    toast.success(isRTL ? "تم تعيين الوحدة الأساسية للمنتج!" : "Base unit of product set!");
   };
 
   const removeUnit = (id: string) => {
@@ -214,6 +237,111 @@ export function ProductFormSheet({ product, onClose, onSave }: ProductFormSheetP
                   <textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={3} style={{ ...getInputStyle(), height: "auto", padding: 12 }} />
                 </div>
 
+                {/* Base Unit Pricing Quick Section */}
+                <div style={{ background: isDark ? ds.surface2 : "#F1F5F9", padding: 20, borderRadius: 16, border: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 16 }}>
+                  <h3 style={{ margin: 0, color: ds.textPrimary, fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+                    <Layers size={18} color="#6366F1" />
+                    {isRTL ? "بيانات التسعير والوحدة الافتراضية للمنتج" : "Pricing & Product Default Unit"}
+                  </h3>
+                  
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", color: ds.textSecondary, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{isRTL ? "الوحدة الافتراضية للمنتج *" : "Product Default Unit *"}</label>
+                      <select 
+                        value={formData.units[0]?.unit_id || ""} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          setFormData(prev => {
+                            const newUnits = [...prev.units];
+                            if (newUnits[0]) newUnits[0].unit_id = val;
+                            return { ...prev, units: newUnits };
+                          });
+                        }} 
+                        required 
+                        style={getInputStyle()}
+                      >
+                        <option value="">{isRTL ? "اختر الوحدة..." : "Select unit..."}</option>
+                        {MOCK_UNITS.map(u => <option key={u.id} value={u.id}>{u.unit_name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: "block", color: ds.textSecondary, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{isRTL ? "الباركود" : "Barcode"}</label>
+                      <div style={{ position: "relative" }}>
+                        <Barcode size={16} color={ds.textMuted} style={{ position: "absolute", top: 14, [isRTL ? "right" : "left"]: 12 }} />
+                        <input 
+                          value={formData.units[0]?.barcode || ""} 
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(prev => {
+                              const newUnits = [...prev.units];
+                              if (newUnits[0]) newUnits[0].barcode = val;
+                              return { ...prev, units: newUnits };
+                            });
+                          }} 
+                          style={{ ...getInputStyle(), paddingInlineStart: 36 }} 
+                          placeholder="123456789" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                    <div>
+                      <label style={{ display: "block", color: ds.textSecondary, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{isRTL ? "سعر الشراء / التكلفة *" : "Purchase Cost *"}</label>
+                      <input 
+                        type="number" 
+                        value={formData.units[0]?.purchase_price || ""} 
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          setFormData(prev => {
+                            const newUnits = [...prev.units];
+                            if (newUnits[0]) newUnits[0].purchase_price = val;
+                            return { ...prev, units: newUnits };
+                          });
+                        }} 
+                        required 
+                        style={{ ...getInputStyle(), color: "#EF4444", fontWeight: 700 }} 
+                        placeholder="0.00" 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", color: ds.textSecondary, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{isRTL ? "سعر البيع *" : "Selling Price *"}</label>
+                      <input 
+                        type="number" 
+                        value={formData.units[0]?.selling_price || ""} 
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          setFormData(prev => {
+                            const newUnits = [...prev.units];
+                            if (newUnits[0]) newUnits[0].selling_price = val;
+                            return { ...prev, units: newUnits };
+                          });
+                        }} 
+                        required 
+                        style={{ ...getInputStyle(), color: "#10B981", fontWeight: 700 }} 
+                        placeholder="0.00" 
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: "block", color: ds.textSecondary, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{isRTL ? "الحد الأدنى للسعر" : "Minimum Price"}</label>
+                      <input 
+                        type="number" 
+                        value={formData.units[0]?.minimum_price || ""} 
+                        onChange={e => {
+                          const val = Number(e.target.value);
+                          setFormData(prev => {
+                            const newUnits = [...prev.units];
+                            if (newUnits[0]) newUnits[0].minimum_price = val;
+                            return { ...prev, units: newUnits };
+                          });
+                        }} 
+                        style={getInputStyle()} 
+                        placeholder="0.00" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div>
                   <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "صور المنتج" : "Product Images"}</label>
                   <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
@@ -258,15 +386,34 @@ export function ProductFormSheet({ product, onClose, onSave }: ProductFormSheetP
                 </div>
 
                 {formData.units.map((unit, index) => (
-                  <div key={unit.id} style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, padding: 20, position: "relative" }}>
-                    {unit.is_base_unit && <div style={{ position: "absolute", top: 16, [isRTL ? "left" : "right"]: 16, background: "#10B981", color: "white", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{isRTL ? "الوحدة الأساسية" : "Base Unit"}</div>}
-                    {!unit.is_base_unit && (
-                      <button type="button" onClick={() => setUnitToDelete(unit.id)} style={{ position: "absolute", top: 16, [isRTL ? "left" : "right"]: 16, background: "none", border: "none", cursor: "pointer" }}>
-                        <Trash2 size={18} color="#EF4444" />
-                      </button>
-                    )}
+                  <div key={unit.id} style={{ background: surface, border: `1px solid ${unit.is_base_unit ? "#10B981" : border}`, borderRadius: 16, padding: 20, position: "relative", boxShadow: unit.is_base_unit ? "0 4px 12px rgba(16,185,129,0.08)" : "none" }}>
+                    
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                      {unit.is_base_unit ? (
+                        <div style={{ background: "rgba(16,185,129,0.1)", color: "#10B981", padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                          <Check size={14} strokeWidth={3} />
+                          {isRTL ? "الوحدة الأساسية الافتراضية" : "Default Base Unit"}
+                        </div>
+                      ) : (
+                        <button 
+                          type="button" 
+                          onClick={() => setAsBaseUnit(unit.id)}
+                          style={{ background: isDark ? ds.surface2 : "#F8FAFC", border: `1px solid ${border}`, color: "#6366F1", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.1)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = isDark ? ds.surface2 : "#F8FAFC"; }}
+                        >
+                          {isRTL ? "تعيين كوحدة أساسية" : "Set as Base"}
+                        </button>
+                      )}
+                      
+                      {!unit.is_base_unit && (
+                        <button type="button" onClick={() => setUnitToDelete(unit.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                          <Trash2 size={18} color="#EF4444" />
+                        </button>
+                      )}
+                    </div>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16, marginTop: unit.is_base_unit ? 24 : 0 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 16 }}>
                       <div>
                         <label style={{ display: "block", color: ds.textSecondary, fontSize: 12, fontWeight: 700, marginBottom: 6 }}>{isRTL ? "الوحدة" : "Unit"}</label>
                         <select value={unit.unit_id} onChange={e => updateUnit(unit.id, "unit_id", e.target.value)} required style={getInputStyle()}>

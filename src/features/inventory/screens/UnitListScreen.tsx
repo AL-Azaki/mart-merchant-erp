@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Search, Plus, Edit, Trash2, Scale, 
-  ArrowRight, ArrowLeft
+  Search, Plus, Edit, Trash2, Scale, Star
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { MOCK_UNITS } from "@/core/data/salesMockData";
-import type { Unit } from "@/core/types/sales";
+import type { Unit } from "@/core/types/catalog";
 import { UnitFormSheet } from "../components/UnitFormSheet";
 import { ConfirmDeleteModal } from "@/shared/components/ConfirmDeleteModal";
 
@@ -22,8 +21,19 @@ export function UnitListScreen() {
   const units = localUnits.filter(u => {
     if (!search) return true;
     const q = search.toLowerCase();
-    return u.name.toLowerCase().includes(q) || (u.name_en?.toLowerCase() || "").includes(q) || u.abbreviation.toLowerCase().includes(q);
+    return (
+      (u.unit_name || "").toLowerCase().includes(q) || 
+      (u.unit_description || "").toLowerCase().includes(q) || 
+      (u.unit_symbol || "").toLowerCase().includes(q)
+    );
   });
+
+  const handleSetDefault = (unitId: string) => {
+    setLocalUnits(prev => prev.map(u => ({
+      ...u,
+      is_default: u.id === unitId
+    })));
+  };
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
@@ -72,17 +82,24 @@ export function UnitListScreen() {
           <AnimatePresence>
             {units.map((u, i) => (
               <motion.div key={u.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }}
-                style={{ background: surface, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+                style={{ background: surface, border: `1px solid ${u.is_default ? "#F59E0B" : (isDark ? ds.border : "#E2E8F0")}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: u.is_default ? "0 4px 14px rgba(245,158,11,0.15)" : "0 2px 8px rgba(0,0,0,0.03)", position: "relative" }}>
                 
-                <div style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+                {u.is_default && (
+                  <div style={{ position: "absolute", top: 12, [isRTL ? "left" : "right"]: 12, display: "flex", alignItems: "center", gap: 4, background: "rgba(245,158,11,0.1)", color: "#F59E0B", padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>
+                    <Star size={12} fill="#F59E0B" />
+                    {isRTL ? "افتراضية النظام" : "System Default"}
+                  </div>
+                )}
+
+                <div style={{ padding: 16, display: "flex", gap: 16, alignItems: "center", marginTop: u.is_default ? 20 : 0 }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: subtle, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, color: ds.textPrimary, fontWeight: 800, fontSize: 15 }}>
-                    {u.abbreviation}
+                    {u.unit_symbol}
                   </div>
                   
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2 }}>{u.name}</h3>
+                    <h3 style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2 }}>{u.unit_name}</h3>
                     <div style={{ color: ds.textSecondary, fontSize: 12 }}>
-                      {u.name_en || "-"}
+                      {u.unit_description || "-"}
                     </div>
                   </div>
                   
@@ -91,13 +108,28 @@ export function UnitListScreen() {
                   </div>
                 </div>
 
-                <div style={{ borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, padding: "8px 16px", display: "flex", justifyContent: "flex-end", gap: 8, background: subtle }}>
-                  <button onClick={() => { setEditingUnit(u); setShowForm(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <Edit size={16} color={ds.textSecondary} />
-                  </button>
-                  <button onClick={() => setUnitToDelete(u)} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <Trash2 size={16} color="#EF4444" />
-                  </button>
+                <div style={{ borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, padding: "8px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", background: subtle }}>
+                  <div>
+                    {!u.is_default && (
+                      <button 
+                        onClick={() => handleSetDefault(u.id)}
+                        style={{ background: "none", border: "none", color: ds.textSecondary, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "4px 8px", borderRadius: 6, transition: "all 0.2s" }}
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "#F59E0B"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = ds.textSecondary; }}
+                      >
+                        <Star size={14} />
+                        {isRTL ? "تعيين كافتراضية" : "Set as Default"}
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setEditingUnit(u); setShowForm(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      <Edit size={16} color={ds.textSecondary} />
+                    </button>
+                    <button onClick={() => setUnitToDelete(u)} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+                      <Trash2 size={16} color="#EF4444" />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -112,13 +144,31 @@ export function UnitListScreen() {
             onClose={() => setShowForm(false)} 
             onSave={(data) => {
               if (editingUnit) {
-                setLocalUnits(prev => prev.map(u => u.id === editingUnit.id ? { ...u, ...data } : u));
+                setLocalUnits(prev => {
+                  let next = prev.map(u => u.id === editingUnit.id ? { ...u, ...data } : u);
+                  if (data.is_default) {
+                    next = next.map(u => u.id === editingUnit.id ? u : { ...u, is_default: false });
+                  }
+                  return next;
+                });
               } else {
                 const newUnit: Unit = {
-                  id: `unit_${Date.now()}`, business_id: "biz_001",
-                  name: data.name!, name_en: data.name_en || null, abbreviation: data.abbreviation!, is_active: data.is_active ?? true
-                };
-                setLocalUnits(prev => [newUnit, ...prev]);
+                  id: `unit_${Date.now()}`,
+                  unit_name: data.unit_name!,
+                  unit_symbol: data.unit_symbol!,
+                  unit_description: data.unit_description || null,
+                  is_active: data.is_active ?? true,
+                  is_default: data.is_default ?? false,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                } as any;
+                setLocalUnits(prev => {
+                  let next = [...prev];
+                  if (data.is_default) {
+                    next = next.map(u => ({ ...u, is_default: false }));
+                  }
+                  return [newUnit, ...next];
+                });
               }
               setShowForm(false);
             }} 
@@ -133,7 +183,7 @@ export function UnitListScreen() {
             onConfirm={() => {
               setLocalUnits(prev => prev.filter(unit => unit.id !== unitToDelete.id));
             }}
-            itemName={unitToDelete.name}
+            itemName={unitToDelete.unit_name}
           />
         )}
       </AnimatePresence>

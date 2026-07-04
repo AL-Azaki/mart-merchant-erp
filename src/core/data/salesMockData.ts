@@ -22,10 +22,10 @@ export const MOCK_CATEGORIES: Category[] = [
 
 // ─── Units (Global — not per business in DB) ──────────────────────────────────
 export const MOCK_UNITS: Unit[] = [
-  { id: "unit_001", unit_name: "قطعة",  unit_symbol: "قطعة",  unit_description: "وحدة مفردة",    created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
-  { id: "unit_002", unit_name: "كرتون", unit_symbol: "كرتون", unit_description: "كرتون (12 قطعة)", created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
-  { id: "unit_003", unit_name: "كيلو",  unit_symbol: "كغ",    unit_description: "كيلوجرام",       created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
-  { id: "unit_004", unit_name: "لتر",   unit_symbol: "لتر",   unit_description: "لتر سائل",        created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
+  { id: "unit_001", unit_name: "قطعة",  unit_symbol: "قطعة",  unit_description: "وحدة مفردة",    is_active: true, is_default: true,  created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
+  { id: "unit_002", unit_name: "كرتون", unit_symbol: "كرتون", unit_description: "كرتون (12 قطعة)", is_active: true, is_default: false, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
+  { id: "unit_003", unit_name: "كيلو",  unit_symbol: "كغ",    unit_description: "كيلوجرام",       is_active: true, is_default: false, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
+  { id: "unit_004", unit_name: "لتر",   unit_symbol: "لتر",   unit_description: "لتر سائل",        is_active: true, is_default: false, created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z" },
 ];
 
 // ─── Products (catalog level — no pricing here) ───────────────────────────────

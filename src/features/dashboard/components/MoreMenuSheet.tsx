@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { X, ShoppingBag, Users, PieChart, Settings } from "lucide-react";
+import { X, PieChart, Settings } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 
 interface MoreMenuSheetProps {
@@ -16,10 +16,8 @@ export function MoreMenuSheet({ activeTab, onSelectTab, onClose }: MoreMenuSheet
   const border = isDark ? ds.border : "#E2E8F0";
 
   const REMAINING_NAV = [
-    { id: "purchases", tabIndex: 3, Icon: ShoppingBag, labelAr: "المشتريات والموردين", labelEn: "Purchases", color: "#8B5CF6" },
-    { id: "customers", tabIndex: 4, Icon: Users, labelAr: "العملاء", labelEn: "Customers", color: "#F59E0B" },
-    { id: "reports", tabIndex: 6, Icon: PieChart, labelAr: "التقارير", labelEn: "Reports", color: "#10B981" },
-    { id: "settings", tabIndex: 7, Icon: Settings, labelAr: "الإعدادات", labelEn: "Settings", color: "#64748B" },
+    { id: "reports", tabIndex: 4, Icon: PieChart, labelAr: "التقارير", labelEn: "Reports", color: "#10B981" },
+    { id: "settings", tabIndex: 5, Icon: Settings, labelAr: "الإعدادات", labelEn: "Settings", color: "#64748B" },
   ];
 
   return (

@@ -15,10 +15,11 @@ export function UnitFormSheet({ unit, onClose, onSave }: UnitFormSheetProps) {
   const { t, isDark, isRTL, ds } = useApp();
   const toast = useToast();
   const [formData, setFormData] = useState({
-    name: unit?.name || "",
-    name_en: unit?.name_en || "",
-    abbreviation: unit?.abbreviation || "",
-    is_active: unit ? unit.is_active : true,
+    unit_name: unit?.unit_name || "",
+    unit_symbol: unit?.unit_symbol || "",
+    unit_description: unit?.unit_description || "",
+    is_active: unit?.is_active ?? true,
+    is_default: unit?.is_default ?? false,
   });
 
   const bg = isDark ? ds.bg : "#F8FAFC";
@@ -32,8 +33,8 @@ export function UnitFormSheet({ unit, onClose, onSave }: UnitFormSheetProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.abbreviation) {
-      toast.warning(isRTL ? "يرجى إدخال اسم الوحدة والاختصار" : "Please enter unit name and abbreviation");
+    if (!formData.unit_name || !formData.unit_symbol) {
+      toast.warning(isRTL ? "يرجى إدخال اسم الوحدة والرمز" : "Please enter unit name and symbol");
       return;
     }
     onSave(formData);
@@ -73,23 +74,27 @@ export function UnitFormSheet({ unit, onClose, onSave }: UnitFormSheetProps) {
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: 24 }}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "اسم الوحدة (عربي) *" : "Unit Name (AR) *"}</label>
-            <input name="name" value={formData.name} onChange={handleChange} required placeholder={isRTL ? "مثال: صندوق" : "e.g. Box"} style={getInputStyle()} />
+            <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "اسم الوحدة *" : "Unit Name *"}</label>
+            <input name="unit_name" value={formData.unit_name} onChange={handleChange} required placeholder={isRTL ? "مثال: قطعة، كرتون، كيلو" : "e.g. Piece, Carton, Kg"} style={getInputStyle()} />
           </div>
           <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الاختصار *" : "Abbreviation *"}</label>
-              <input name="abbreviation" value={formData.abbreviation} onChange={handleChange} required placeholder={isRTL ? "مثال: ص" : "e.g. bx"} style={getInputStyle()} />
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الرمز / الاختصار *" : "Symbol / Abbreviation *"}</label>
+              <input name="unit_symbol" value={formData.unit_symbol} onChange={handleChange} required placeholder={isRTL ? "مثال: قطعة، كرتون، كغ" : "e.g. pcs, ctn, kg"} style={getInputStyle()} />
             </div>
             <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "اسم الوحدة (إنجليزي)" : "Unit Name (EN)"}</label>
-              <input name="name_en" value={formData.name_en} onChange={handleChange} placeholder="Box" style={getInputStyle()} />
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الوصف" : "Description"}</label>
+              <input name="unit_description" value={formData.unit_description} onChange={handleChange} placeholder={isRTL ? "الوصف أو التفاصيل" : "Description or details"} style={getInputStyle()} />
             </div>
           </div>
-          <div style={{ marginBottom: 24 }}>
+          <div style={{ marginBottom: 24, display: "flex", gap: 24 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: ds.textPrimary, fontSize: 14, fontWeight: 600 }}>
               <input type="checkbox" name="is_active" checked={formData.is_active} onChange={handleChange} style={{ width: 18, height: 18, accentColor: "#3B82F6" }} />
               {isRTL ? "وحدة نشطة" : "Active Unit"}
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: ds.textPrimary, fontSize: 14, fontWeight: 600 }}>
+              <input type="checkbox" name="is_default" checked={formData.is_default} onChange={handleChange} style={{ width: 18, height: 18, accentColor: "#3B82F6" }} />
+              {isRTL ? "افتراضية النظام" : "System Default"}
             </label>
           </div>
 

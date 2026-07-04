@@ -5,33 +5,24 @@ import {
   ShoppingCart,
   Package,
   ShoppingBag,
-  BarChart2,
   Settings,
   Bell,
   User,
-  Building2,
-  TrendingUp,
   DollarSign,
   PieChart,
   Users,
   FileText,
   Plus,
-  Zap,
   LogOut,
   ChevronRight,
-  TrendingDown,
   Box,
   CreditCard,
-  MapPin,
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { SettingsBar } from "@/shared/components/SettingsBar";
-import { LogoSVG } from "@/features/onboarding/screens/SplashScreen";
 import { SalesModule } from "@/features/sales/screens/SalesModule";
 import { InventoryModule } from "@/features/inventory/screens/InventoryModule";
-import { ContactListScreen } from "@/features/crm/screens/ContactListScreen";
 import { FinanceModule } from "@/features/finance/screens/FinanceModule";
-import { PurchasesModule } from "@/features/purchases/screens/PurchasesModule";
 import { UsersRolesModule } from "@/features/users/screens/UsersRolesModule";
 import { ReportsModule } from "@/features/reports/screens/ReportsModule";
 import { SettingsModule } from "@/features/settings/screens/SettingsModule";
@@ -43,6 +34,7 @@ import {
   MOCK_BRANCHES,
 } from "@/core/data/mockData";
 import { MOCK_CUSTOMERS, MOCK_PRODUCTS } from "@/core/data/salesMockData";
+import { MOCK_SUPPLIERS } from "@/core/data/purchasesMockData";
 
 interface DashboardProps {
   onLogout?: () => void;
@@ -55,7 +47,7 @@ const CORE_NAV = [
   { id: "home", tabIndex: 0, Icon: Home, labelAr: "الرئيسية", labelEn: "Home" },
   { id: "sales", tabIndex: 1, Icon: ShoppingCart, labelAr: "المبيعات", labelEn: "Sales" },
   { id: "inventory", tabIndex: 2, Icon: Package, labelAr: "المخزون", labelEn: "Inventory" },
-  { id: "finance", tabIndex: 5, Icon: DollarSign, labelAr: "المالية", labelEn: "Finance" },
+  { id: "finance", tabIndex: 3, Icon: DollarSign, labelAr: "المالية", labelEn: "Finance" },
   { id: "more", tabIndex: -1, Icon: Grid, labelAr: "المزيد", labelEn: "More" },
 ];
 
@@ -65,6 +57,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [settingsView, setSettingsView] = useState<"main" | "users">("main");
   const [customers, setCustomers] = useState<any[]>(MOCK_CUSTOMERS);
   const [products, setProducts] = useState<any[]>(MOCK_PRODUCTS);
+  const [suppliers, setSuppliers] = useState<any[]>(MOCK_SUPPLIERS);
   const [quickAction, setQuickAction] = useState<string | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -124,8 +117,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const quickActions = [
     { id: "newSale", Icon: ShoppingCart, label: t.newSale, color: "#3B82F6", tab: 1 },
     { id: "addProduct", Icon: Plus, label: t.addProduct, color: "#10B981", tab: 2 },
-    { id: "newCustomer", Icon: User, label: t.newCustomer, color: "#8B5CF6", tab: 4 },
-    { id: "expenses", Icon: CreditCard, label: isRTL ? "صرفيات" : "Expenses", color: "#EF4444", tab: 5 },
+    { id: "newCustomer", Icon: User, label: t.newCustomer, color: "#8B5CF6", tab: 2 },
+    { id: "newPurchase", Icon: ShoppingBag, label: isRTL ? "شراء بضاعة" : "New Purchase", color: "#EC4899", tab: 2 },
+    { id: "expenses", Icon: CreditCard, label: isRTL ? "صرفيات" : "Expenses", color: "#EF4444", tab: 3 },
   ];
 
   // ── Render: Home tab ────────────────────────────────────────────────────────
@@ -254,7 +248,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
             gap: 10,
           }}
         >
@@ -316,61 +310,6 @@ export function Dashboard({ onLogout }: DashboardProps) {
     </div>
   );
 
-  // ── Render: Placeholder tab ─────────────────────────────────────────────────
-  const renderPlaceholder = (Icon: React.FC<{ size?: number; color?: string; strokeWidth?: number }>, label: string) => (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px",
-        textAlign: "center",
-      }}
-    >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: "spring" }}
-        style={{
-          width: 80,
-          height: 80,
-          borderRadius: 24,
-          background: isDark ? "rgba(59, 130, 246, 0.1)" : "#EFF6FF",
-          border: `1px dashed ${ds.primary}40`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 20,
-        }}
-      >
-        <Icon size={36} color={ds.primary} strokeWidth={1.5} />
-      </motion.div>
-      <motion.p
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        style={{
-          color: ds.textPrimary,
-          fontSize: 18,
-          fontWeight: 700,
-          marginBottom: 8,
-        }}
-      >
-        {label}
-      </motion.p>
-      <motion.p 
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        style={{ color: ds.textSecondary, fontSize: 13, lineHeight: 1.6 }}
-      >
-        {t.comingSoon}
-      </motion.p>
-    </div>
-  );
-
   // ── Render: Settings tab ────────────────────────────────────────────────────
   const renderSettings = () => {
     return <SettingsModule onLogout={onLogout} />;
@@ -381,12 +320,25 @@ export function Dashboard({ onLogout }: DashboardProps) {
     switch (activeTab) {
       case 0: return renderHome();
       case 1: return <SalesModule customers={customers} products={products} initialView={quickAction === "newSale" ? "new" : "main"} />;
-      case 2: return <InventoryModule products={products} onUpdateProducts={setProducts} initialAction={quickAction === "addProduct" ? "new" : null} />;
-      case 3: return <PurchasesModule products={products} />;
-      case 4: return <ContactListScreen customers={customers} onUpdateCustomers={setCustomers} initialShowForm={quickAction === "newCustomer"} />;
-      case 5: return <FinanceModule initialAction={quickAction === "expenses" ? "expense" : null} />;
-      case 6: return <ReportsModule />;
-      case 7: return settingsView === "users" ? <UsersRolesModule onBack={() => setSettingsView("main")} /> : renderSettings();
+      case 2: return (
+        <InventoryModule 
+          products={products} 
+          onUpdateProducts={setProducts} 
+          customers={customers}
+          onUpdateCustomers={setCustomers}
+          suppliers={suppliers}
+          onUpdateSuppliers={setSuppliers}
+          initialAction={
+            quickAction === "addProduct" ? "new" : 
+            quickAction === "newCustomer" ? "newCustomer" : 
+            quickAction === "newPurchase" ? "newPurchase" : 
+            null
+          } 
+        />
+      );
+      case 3: return <FinanceModule initialAction={quickAction === "expenses" ? "expense" : null} />;
+      case 4: return <ReportsModule />;
+      case 5: return settingsView === "users" ? <UsersRolesModule onBack={() => setSettingsView("main")} /> : renderSettings();
       default: return renderHome();
     }
   };
@@ -418,20 +370,18 @@ export function Dashboard({ onLogout }: DashboardProps) {
       >
         {/* Left: User Greeting & Business */}
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 46, height: 46, borderRadius: 14, background: "linear-gradient(135deg, #1D4ED8, #3B82F6)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(37,99,235,0.25)" }}>
-            <LogoSVG size={24} white />
+          <div style={{ width: 44, height: 44, borderRadius: 14, overflow: "hidden", border: `2px solid ${isDark ? "rgba(99, 102, 241, 0.4)" : "#6366F1"}`, display: "flex", alignItems: "center", justifyContent: "center", background: ds.surface2 }}>
+            <span style={{ fontSize: 16, fontWeight: 800, color: ds.primary }}>{(user.full_name || "").charAt(0)}</span>
           </div>
           <div>
-            <h2 style={{ color: ds.textPrimary, fontSize: 17, fontWeight: 800, marginBottom: 4, display: "flex", alignItems: "center", gap: 6, letterSpacing: "-0.3px" }}>
-              {t.welcomeUser}، {user.first_name}
-            </h2>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, color: ds.textSecondary, fontSize: 12.5, fontWeight: 600 }}>
-              <Building2 size={14} color={ds.primary} />
-              {business.name}
-              <div style={{ width: 4, height: 4, borderRadius: 2, background: ds.textMuted, margin: "0 4px" }} />
-              <MapPin size={13} color={ds.textMuted} /> {business.city}
-              <div style={{ width: 4, height: 4, borderRadius: 2, background: ds.textMuted, margin: "0 4px" }} />
-              <DollarSign size={13} color={ds.textMuted} /> {business.default_currency}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700 }}>{user.full_name || ""}</span>
+              <span style={{ padding: "2px 8px", background: "rgba(99,102,241,0.15)", borderRadius: 6, color: ds.primary, fontSize: 10, fontWeight: 700 }}>{isRTL ? "مسؤول" : "Admin"}</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, color: ds.textSecondary, fontSize: 12, marginTop: 2 }}>
+              <span>{business.name}</span>
+              <span>•</span>
+              <span>{branch.name}</span>
             </div>
           </div>
         </div>
@@ -495,9 +445,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
         }}
       >
         {CORE_NAV.map(({ id, tabIndex, Icon, labelAr, labelEn }) => {
-          // If a non-core tab is active (like Purchases = 3), highlight "More"
+          // If a non-core tab is active, highlight "More"
           const isActiveCore = activeTab === tabIndex;
-          const isMoreActive = id === "more" && ![0, 1, 2, 5].includes(activeTab);
+          const isMoreActive = id === "more" && ![0, 1, 2, 3].includes(activeTab);
           const isActive = isActiveCore || isMoreActive;
           
           return (

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Building2, Users, Receipt, Palette, Store, ChevronRight, LogOut, FileText, ArrowRight, ArrowLeft } from "lucide-react";
+import { Building2, Users, Receipt, Palette, ChevronRight, LogOut, ArrowRight, ArrowLeft, Tag, Scale } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
 import { SettingsBar } from "@/shared/components/SettingsBar";
 import { UsersRolesModule } from "@/features/users/screens/UsersRolesModule";
+import { CategoryListScreen } from "@/features/inventory/screens/CategoryListScreen";
+import { UnitListScreen } from "@/features/inventory/screens/UnitListScreen";
 
 // Dummy screens for inside settings
 function BusinessProfileScreen() {
@@ -120,6 +122,8 @@ export function SettingsModule({ onLogout }: { onLogout: () => void }) {
     { id: "business", title: isRTL ? "معلومات المنشأة" : "Business Profile", desc: isRTL ? "الاسم، السجل التجاري، الرقم الضريبي" : "Name, CR, VAT number", icon: Building2, color: "#3B82F6" },
     { id: "users", title: isRTL ? "المستخدمين والصلاحيات" : "Users & Roles", desc: isRTL ? "إدارة الوصول وتعيين الأدوار" : "Manage access and roles", icon: Users, color: "#8B5CF6" },
     { id: "print", title: isRTL ? "الطباعة والفواتير" : "Print & Invoices", desc: isRTL ? "مقاس الطابعة، التذييل، والـ QR" : "Paper size, footers, QR config", icon: Receipt, color: "#F59E0B" },
+    { id: "categories", title: isRTL ? "فئات المنتجات" : "Product Categories", desc: isRTL ? "إدارة وتصنيف السلع والخدمات" : "Manage product classifications", icon: Tag, color: "#10B981" },
+    { id: "units", title: isRTL ? "وحدات القياس" : "Units of Measure", desc: isRTL ? "تعديل وتحديد الوحدات والافتراضيات" : "Configure package units and defaults", icon: Scale, color: "#EC4899" },
   ];
 
   return (
@@ -142,6 +146,8 @@ export function SettingsModule({ onLogout }: { onLogout: () => void }) {
               {activeScreen === "business" ? (isRTL ? "معلومات المنشأة" : "Business Profile") :
                activeScreen === "users" ? (isRTL ? "إدارة المستخدمين" : "Users Management") :
                activeScreen === "print" ? (isRTL ? "إعدادات الطباعة" : "Print Settings") :
+               activeScreen === "categories" ? (isRTL ? "فئات المنتجات" : "Product Categories") :
+               activeScreen === "units" ? (isRTL ? "وحدات القياس" : "Units of Measure") :
                (isRTL ? "إعدادات النظام" : "System Settings")}
             </h2>
             {!activeScreen && (
@@ -196,6 +202,8 @@ export function SettingsModule({ onLogout }: { onLogout: () => void }) {
               {activeScreen === "business" && <BusinessProfileScreen />}
               {activeScreen === "users" && <UsersRolesModule />}
               {activeScreen === "print" && <PrintSettingsScreen />}
+              {activeScreen === "categories" && <CategoryListScreen />}
+              {activeScreen === "units" && <UnitListScreen />}
             </motion.div>
           )}
         </AnimatePresence>

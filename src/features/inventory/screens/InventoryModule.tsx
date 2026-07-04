@@ -1,25 +1,51 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { useApp } from "@/providers/AppProvider";
 import { ProductListScreen } from "./ProductListScreen";
-import { CategoryListScreen } from "./CategoryListScreen";
-import { UnitListScreen } from "./UnitListScreen";
 import { WarehouseListScreen } from "./WarehouseListScreen";
 import { InventoryTransactionsScreen } from "./InventoryTransactionsScreen";
 import { StockAdjustmentsScreen } from "./StockAdjustmentsScreen";
-import { Package, FolderTree, Scale, Building2, ArrowLeftRight, ClipboardCheck } from "lucide-react";
+import { PurchasesTabScreen } from "./PurchasesTabScreen";
+import { ContactsAndSuppliersScreen } from "./ContactsAndSuppliersScreen";
+import { Package, Building2, ArrowLeftRight, ClipboardCheck, ShoppingBag, Users } from "lucide-react";
 
-export function InventoryModule({ initialAction, products = [], onUpdateProducts }: { initialAction?: "new" | null, products?: any[], onUpdateProducts?: (p: any[]) => void }) {
+interface InventoryModuleProps {
+  initialAction?: "new" | "newCustomer" | "newPurchase" | null;
+  products?: any[];
+  onUpdateProducts?: (p: any[]) => void;
+  customers?: any[];
+  onUpdateCustomers?: (c: any[]) => void;
+  suppliers?: any[];
+  onUpdateSuppliers?: (s: any[]) => void;
+}
+
+export function InventoryModule({ 
+  initialAction, 
+  products = [], 
+  onUpdateProducts,
+  customers = [],
+  onUpdateCustomers = () => {},
+  suppliers = [],
+  onUpdateSuppliers = () => {}
+}: InventoryModuleProps) {
   const { t, isDark, isRTL, ds } = useApp();
-  const [activeTab, setActiveTab] = useState<"products" | "categories" | "units" | "warehouses" | "transactions" | "adjustments">("products");
+  
+  // Choose initial tab based on initialAction
+  const getInitialTab = () => {
+    if (initialAction === "newCustomer") return "contacts";
+    if (initialAction === "newPurchase") return "purchases";
+    return "products";
+  };
+
+  const [activeTab, setActiveTab] = useState<"products" | "purchases" | "contacts" | "warehouses" | "transactions" | "adjustments">(getInitialTab());
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
 
   const tabs = [
     { id: "products", label: isRTL ? "المنتجات" : "Products", icon: Package },
-    { id: "categories", label: isRTL ? "الفئات" : "Categories", icon: FolderTree },
-    { id: "units", label: isRTL ? "وحدات القياس" : "Units", icon: Scale },
+    { id: "purchases", label: isRTL ? "المشتريات" : "Purchases", icon: ShoppingBag },
+    { id: "contacts", label: isRTL ? "العملاء والموردين" : "Contacts & Suppliers", icon: Users },
     { id: "warehouses", label: isRTL ? "المستودعات" : "Warehouses", icon: Building2 },
     { id: "transactions", label: isRTL ? "حركات المخزون" : "Stock Movements", icon: ArrowLeftRight },
     { id: "adjustments", label: isRTL ? "تسوية وجرد المخزون" : "Stock Adjustments", icon: ClipboardCheck },
@@ -82,9 +108,30 @@ export function InventoryModule({ initialAction, products = [], onUpdateProducts
             transition={{ duration: 0.2 }}
             style={{ position: "absolute", inset: 0 }}
           >
-            {activeTab === "products" && <ProductListScreen products={products} onUpdateProducts={onUpdateProducts} initialShowForm={initialAction === "new"} />}
-            {activeTab === "categories" && <CategoryListScreen />}
-            {activeTab === "units" && <UnitListScreen />}
+            {activeTab === "products" && (
+              <ProductListScreen 
+                products={products} 
+                onUpdateProducts={onUpdateProducts} 
+                initialShowForm={initialAction === "new"} 
+              />
+            )}
+            {activeTab === "purchases" && (
+              <PurchasesTabScreen
+                products={products}
+                suppliers={suppliers}
+                initialAction={initialAction === "newPurchase" ? "new" : null}
+              />
+            )}
+            {activeTab === "contacts" && (
+              <ContactsAndSuppliersScreen
+                customers={customers}
+                onUpdateCustomers={onUpdateCustomers}
+                suppliers={suppliers}
+                onUpdateSuppliers={onUpdateSuppliers}
+                initialType="customers"
+                initialAction={initialAction === "newCustomer" ? "newCustomer" : null}
+              />
+            )}
             {activeTab === "warehouses" && <WarehouseListScreen />}
             {activeTab === "transactions" && <InventoryTransactionsScreen />}
             {activeTab === "adjustments" && <StockAdjustmentsScreen products={products} />}

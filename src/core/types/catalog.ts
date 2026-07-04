@@ -47,6 +47,8 @@ export interface Unit {
   unit_name:        string;      // e.g. "كرتون", "قطعة", "كيلوجرام"
   unit_symbol:      string;      // e.g. "ك", "pcs", "kg"
   unit_description: string | null;
+  is_active?:       boolean;     // Optional active flag
+  is_default?:      boolean;     // System default unit flag
   created_at:       ISODateString;
   updated_at:       ISODateString;
 }
