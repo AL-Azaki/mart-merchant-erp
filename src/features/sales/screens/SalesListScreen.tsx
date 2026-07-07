@@ -1,32 +1,33 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus, Search, Filter, FileText, CheckCircle2, Clock, XCircle,
   AlertCircle, ChevronRight, TrendingUp, ArrowUpRight,
 } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
-import { MOCK_SALES_INVOICES, MOCK_SALES_INVOICE_ITEMS, MOCK_CUSTOMERS } from "@/core/data/salesMockData";
+import { MOCK_SALES_INVOICE_ITEMS, MOCK_CUSTOMERS } from "@/core/data/salesMockData";
 import { MOCK_BUSINESS } from "@/core/data/mockData";
 import type { SalesInvoiceWithDetails } from "@/core/types/sales";
+import { useFinancialStore } from "@/core/engine/useFinancialStore";
 
 interface SalesListScreenProps {
   onNewInvoice: () => void;
   onViewInvoice: (inv: SalesInvoiceWithDetails) => void;
 }
 
-type FilterTab = "all" | "paid" | "partially_paid" | "draft" | "overdue" | "cancelled";
+type FilterTab = "all" | "paid" | "unpaid" | "draft" | "overdue" | "cancelled";
 
-const STATUS_CONFIG: Record<InvoiceStatus, { labelKey: string; color: string; bg: string; Icon: React.FC<{ size?: number; color?: string; strokeWidth?: number }> }> = {
-  paid:           { labelKey: "invoicePaid",      color: "#16A34A", bg: "rgba(22, 163, 74, 0.12)",   Icon: CheckCircle2 },
-  partially_paid: { labelKey: "invoicePartial",   color: "#F59E0B", bg: "rgba(245, 158, 11, 0.12)", Icon: Clock },
-  draft:          { labelKey: "invoiceDraft",     color: "#64748B", bg: "rgba(100, 116, 139, 0.12)",Icon: FileText },
-  confirmed:      { labelKey: "invoiceConfirmed", color: "#3B82F6", bg: "rgba(59, 130, 246, 0.12)", Icon: CheckCircle2 },
-  cancelled:      { labelKey: "invoiceCancelled", color: "#EF4444", bg: "rgba(239, 68, 68, 0.12)",  Icon: XCircle },
-  overdue:        { labelKey: "invoiceOverdue",   color: "#DC2626", bg: "rgba(220, 38, 38, 0.12)",  Icon: AlertCircle },
+const STATUS_CONFIG: Record<string, { labelKey: string; color: string; bg: string; Icon: React.FC<{ size?: number; color?: string; strokeWidth?: number }> }> = {
+  paid:      { labelKey: "invoicePaid",      color: "#16A34A", bg: "rgba(22, 163, 74, 0.12)",   Icon: CheckCircle2 },
+  unpaid:    { labelKey: "invoiceUnpaid",    color: "#EF4444", bg: "rgba(239, 68, 68, 0.12)",   Icon: AlertCircle },
+  draft:     { labelKey: "invoiceDraft",     color: "#64748B", bg: "rgba(100, 116, 139, 0.12)", Icon: FileText },
+  confirmed: { labelKey: "invoiceConfirmed", color: "#3B82F6", bg: "rgba(59, 130, 246, 0.12)",  Icon: CheckCircle2 },
+  cancelled: { labelKey: "invoiceCancelled", color: "#EF4444", bg: "rgba(239, 68, 68, 0.12)",   Icon: XCircle },
 };
 
 export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreenProps) {
   const { t, isDark, isRTL, ds } = useApp();
+  const store = useFinancialStore();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
@@ -35,32 +36,36 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
 
   // Filter tabs
   const filterTabs: { key: FilterTab; label: string }[] = [
-    { key: "all",           label: t.filterAll },
-    { key: "paid",          label: t.filterPaid },
-    { key: "partially_paid",label: t.filterUnpaid },
-    { key: "draft",         label: t.filterDraft },
+    { key: "all",    label: t.filterAll },
+    { key: "paid",   label: t.filterPaid },
+    { key: "unpaid", label: isRTL ? "غير مدفوعة (آجلة)" : "Unpaid" },
+    { key: "draft",  label: t.filterDraft },
   ];
 
   const filtered = useMemo(() => {
-    return MOCK_SALES_INVOICES.filter((inv) => {
+    return store.invoices.filter((inv) => {
       const matchFilter =
         activeFilter === "all" ||
         (activeFilter === "paid" && inv.payment_status === "Paid") ||
-        (activeFilter === "partially_paid" && inv.payment_status === "Partial") ||
+        (activeFilter === "unpaid" && inv.payment_status === "Unpaid") ||
         (activeFilter === "draft" && inv.status === "Draft");
       const q = search.toLowerCase();
+
+      const customerName = store.customers.find(c => c.id === inv.customer_id)?.customer_name || "";
+
       const matchSearch =
         !q ||
-        inv.invoice_number.toLowerCase().includes(q);
+        inv.invoice_number.toLowerCase().includes(q) ||
+        customerName.toLowerCase().includes(q);
       return matchFilter && matchSearch;
     });
-  }, [search, activeFilter]);
+  }, [search, activeFilter, store.invoices]);
 
-  // Summary stats
-  const todayTotal = MOCK_SALES_INVOICES
-    .filter((i) => i.payment_status === "Paid" || i.payment_status === "Partial")
+  // Summary stats — derived, never stored separately
+  const todayTotal = store.invoices
+    .filter((i) => i.payment_status === "Paid")
     .reduce((s, i) => s + i.grand_total, 0);
-  const pendingCount = MOCK_SALES_INVOICES.filter((i) => i.payment_status === "Partial" || i.payment_status === "Unpaid").length;
+  const pendingCount = store.invoices.filter((i) => i.payment_status === "Unpaid").length;
 
   function formatDate(iso: string) {
     return new Date(iso).toLocaleDateString(isRTL ? "ar-YE" : "en-US", {
@@ -78,26 +83,12 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
           HEADER — Title + Primary CTA in one prominent row
           ═══════════════════════════════════════════════════ */}
       <div style={{
-        padding: "20px 24px 16px",
+        padding: "16px 24px",
         background: isDark ? ds.surface : "#FFFFFF",
         borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
         flexShrink: 0,
       }}>
-        {/* Row 1: Page title (left) + New Invoice CTA (right) — always visible, primary hierarchy */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-
-          {/* Title block */}
-          <div>
-            <h1 style={{ color: ds.textPrimary, fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: -0.3 }}>
-              {t.allInvoices}
-            </h1>
-            <p style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 500, marginTop: 3, marginBottom: 0 }}>
-              {t.salesTitle}
-            </p>
-          </div>
-        </div>
-
-        {/* Row 2: Summary KPI cards */}
+        {/* Summary KPI cards */}
         <div style={{ display: "flex", gap: 10 }}>
 
           {/* Revenue card */}
@@ -179,7 +170,7 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
             </div>
             <div style={{ textAlign: isRTL ? "left" : "right" }}>
               <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>
-                {MOCK_SALES_INVOICES.length}
+                {store.invoices.length}
               </span>
               <span style={{ color: ds.textMuted, fontSize: 11, marginInlineStart: 4 }}>{t.invoices}</span>
             </div>
@@ -240,11 +231,12 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
         </div>
       </div>
 
-      {/* Invoice list */}
+      {/* Invoice Table Container */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 24px" }}>
+        <div style={{ background: isDark ? ds.surface : "#FFFFFF", borderRadius: 16, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.03)" }}>
         {filtered.length === 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", textAlign: "center", gap: 12 }}>
-            <div style={{ width: 72, height: 72, borderRadius: 24, background: isDark ? ds.surface : "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "60px 20px", textAlign: "center", gap: 12 }}>
+            <div style={{ width: 72, height: 72, borderRadius: 24, background: isDark ? ds.surface2 : "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <FileText size={32} color={ds.textMuted} strokeWidth={1.5} />
             </div>
             <p style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 700 }}>{t.noInvoicesYet}</p>
@@ -264,78 +256,78 @@ export function SalesListScreen({ onNewInvoice, onViewInvoice }: SalesListScreen
             </motion.button>
           </div>
         ) : (
-          <AnimatePresence>
-            {filtered.map((inv, i) => {
-              // Map DB status to UI config keys
-              let cfgKey: string = "draft";
-              if (inv.status === "Draft") cfgKey = "draft";
-              else if (inv.status === "Cancelled") cfgKey = "cancelled";
-              else if (inv.payment_status === "Paid") cfgKey = "paid";
-              else if (inv.payment_status === "Partial") cfgKey = "partially_paid";
-              else cfgKey = "confirmed";
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: isRTL ? "right" : "left", whiteSpace: "nowrap" }}>
+              <thead>
+                <tr style={{ background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+                  <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%" }}>{isRTL ? "رقم الفاتورة" : "Invoice"}</th>
+                  <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "20%" }}>{isRTL ? "التاريخ" : "Date"}</th>
+                  <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "30%" }}>{isRTL ? "العميل" : "Customer"}</th>
+                  <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%" }}>{isRTL ? "الحالة" : "Status"}</th>
+                  <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%", textAlign: isRTL ? "left" : "right" }}>{isRTL ? "الإجمالي" : "Total"}</th>
+                  <th style={{ width: 40 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((inv, i) => {
+                  let cfgKey: string = "draft";
+                  if (inv.status === "Draft") cfgKey = "draft";
+                  else if (inv.status === "Cancelled") cfgKey = "cancelled";
+                  else if (inv.payment_status === "Paid") cfgKey = "paid";
+                  else if (inv.payment_status === "Unpaid") cfgKey = "unpaid";
+                  else cfgKey = "confirmed";
 
-              const cfg = STATUS_CONFIG[cfgKey as keyof typeof STATUS_CONFIG];
-              return (
-                <motion.div
-                  key={inv.id}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ delay: i * 0.05 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    // Populate items for the detailed view
-                    const items = MOCK_SALES_INVOICE_ITEMS.filter(it => it.sales_invoice_id === inv.id).map(it => ({
-                      ...it,
-                      product_unit: { product: { name: `منتج تجريبي ${it.product_unit_id}` } }
-                    })) as any;
-                    const customer = MOCK_CUSTOMERS.find(c => c.id === inv.customer_id) || null;
-                    onViewInvoice({ ...inv, items, customer } as any);
-                  }}
-                  style={{
-                    background: isDark ? ds.surface : "#FFFFFF",
-                    borderRadius: 20, padding: "16px",
-                    marginBottom: 12,
-                    border: `1px solid ${isDark ? ds.border : "#F1F5F9"}`,
-                    boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-                    cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 14,
-                  }}
-                >
-                  {/* Icon */}
-                  <div style={{ width: 46, height: 46, borderRadius: 14, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <cfg.Icon size={22} color={cfg.color} strokeWidth={2} />
-                  </div>
+                  const cfg = STATUS_CONFIG[cfgKey];
+                  const customerName = store.customers.find(c => c.id === inv.customer_id)?.customer_name || (isRTL ? "عميل نقدي (كاش)" : "Cash Customer");
+                  const statusText = cfgKey === "unpaid" ? (isRTL ? "غير مدفوعة" : "Unpaid") : (cfgKey === "paid" ? (isRTL ? "مدفوعة" : "Paid") : t[cfg.labelKey] || cfgKey);
 
-                  {/* Info */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                      <span style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700, direction: "ltr" }}>
+                  return (
+                    <tr
+                      key={inv.id}
+                      onClick={() => {
+                        const items = MOCK_SALES_INVOICE_ITEMS.filter(it => it.sales_invoice_id === inv.id).map(it => ({
+                          ...it,
+                          product_unit: { product: { name: `منتج تجريبي ${it.product_unit_id}` } }
+                        })) as any;
+                        const customer = store.customers.find(c => c.id === inv.customer_id) || null;
+                        onViewInvoice({ ...inv, items, customer } as any);
+                      }}
+                      style={{
+                        cursor: "pointer",
+                        borderBottom: `1px solid ${isDark ? ds.border : "#F1F5F9"}`,
+                        transition: "background 0.2s",
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC"}
+                      onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      <td style={{ padding: "16px 20px", fontWeight: 700, color: ds.textPrimary, direction: "ltr", textAlign: isRTL ? "right" : "left" }}>
                         {inv.invoice_number}
-                      </span>
-                      <span style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 800 }}>
+                      </td>
+                      <td style={{ padding: "16px 20px", fontSize: 13, color: ds.textSecondary, fontWeight: 500 }}>
+                        {formatDate(inv.invoice_date)}
+                      </td>
+                      <td style={{ padding: "16px 20px", fontWeight: 700, color: ds.textPrimary }}>
+                        {customerName}
+                      </td>
+                      <td style={{ padding: "16px 20px" }}>
+                        <span style={{ padding: "6px 12px", background: cfg.bg, color: cfg.color, borderRadius: 8, fontSize: 12, fontWeight: 800, display: "inline-block" }}>
+                          {statusText}
+                        </span>
+                      </td>
+                      <td style={{ padding: "16px 20px", fontWeight: 800, color: ds.textPrimary, fontSize: 15, textAlign: isRTL ? "left" : "right" }}>
                         {inv.grand_total.toLocaleString()} <span style={{ fontSize: 11, fontWeight: 500, color: ds.textMuted }}>{currency}</span>
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 500 }}>
-                        {t.cashCustomer}
-                      </span>
-                      <span style={{ padding: "3px 10px", background: cfg.bg, color: cfg.color, borderRadius: 8, fontSize: 11, fontWeight: 700 }}>
-                        {t[cfg.labelKey]}
-                      </span>
-                    </div>
-                    <span style={{ color: ds.textMuted, fontSize: 11, marginTop: 4, display: "block" }}>
-                      {formatDate(inv.invoice_date)}
-                    </span>
-                  </div>
-
-                  <ChevronRight size={16} color={ds.textMuted} style={{ transform: isRTL ? "rotate(180deg)" : undefined, flexShrink: 0 }} />
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                      </td>
+                      <td style={{ padding: "16px 20px", textAlign: "center" }}>
+                        <ChevronRight size={18} color={ds.textMuted} style={{ transform: isRTL ? "rotate(180deg)" : undefined }} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
+        </div>
       </div>
     </div>
   );

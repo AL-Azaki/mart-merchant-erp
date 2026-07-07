@@ -16,8 +16,8 @@ export function JournalEntryDetailsSheet({ entry, lines, onClose }: JournalEntry
   const border = isDark ? ds.border : "#E2E8F0";
 
   const entryLines = lines.filter(l => l.journal_entry_id === entry.id);
-  const totalDebit = entryLines.reduce((sum, l) => sum + (l.debit_amount || 0), 0);
-  const totalCredit = entryLines.reduce((sum, l) => sum + (l.credit_amount || 0), 0);
+  const totalDebit = entryLines.reduce((sum, l) => sum + (l.base_debit_amount || l.debit_amount || 0), 0);
+  const totalCredit = entryLines.reduce((sum, l) => sum + (l.base_credit_amount || l.credit_amount || 0), 0);
   const isBalanced = totalDebit === totalCredit;
 
   const handlePrint = () => {
@@ -94,11 +94,11 @@ export function JournalEntryDetailsSheet({ entry, lines, onClose }: JournalEntry
                   <div style={{ fontSize: 14, fontWeight: 700, color: ds.textPrimary, marginBottom: 4 }}>{getAccountName(line.account_id)}</div>
                   <div style={{ fontSize: 12, color: ds.textMuted }}>{line.description || "---"}</div>
                 </div>
-                <div style={{ textAlign: isRTL ? "left" : "right", fontSize: 15, fontWeight: 800, color: line.debit_amount > 0 ? "#10B981" : ds.textMuted }}>
-                  {line.debit_amount ? line.debit_amount.toLocaleString() : "0"}
+                <div style={{ textAlign: isRTL ? "left" : "right", fontSize: 15, fontWeight: 800, color: (line.base_debit_amount || line.debit_amount) > 0 ? "#10B981" : ds.textMuted }}>
+                  {(line.base_debit_amount || line.debit_amount) ? (line.base_debit_amount || line.debit_amount).toLocaleString() : "0"}
                 </div>
-                <div style={{ textAlign: isRTL ? "left" : "right", fontSize: 15, fontWeight: 800, color: line.credit_amount > 0 ? "#EF4444" : ds.textMuted }}>
-                  {line.credit_amount ? line.credit_amount.toLocaleString() : "0"}
+                <div style={{ textAlign: isRTL ? "left" : "right", fontSize: 15, fontWeight: 800, color: (line.base_credit_amount || line.credit_amount) > 0 ? "#EF4444" : ds.textMuted }}>
+                  {(line.base_credit_amount || line.credit_amount) ? (line.base_credit_amount || line.credit_amount).toLocaleString() : "0"}
                 </div>
               </div>
             ))}

@@ -79,47 +79,70 @@ export function PurchaseListScreen({ invoices: initialInvoices, suppliers, onNew
         </div>
       </div>
 
-      {/* List */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px" }}>
-        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 20, overflow: "hidden" }}>
-          {invoices.map((inv, idx) => {
-            return (
-              <motion.div key={inv.id} 
-                whileHover={{ scale: 1.01 }}
-                onClick={() => setSelectedInvoice(inv)}
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}
-                style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, borderBottom: idx === invoices.length - 1 ? "none" : `1px solid ${border}`, cursor: "pointer" }}>
-                
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(59,130,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <ArrowDownRight size={20} color="#3B82F6" strokeWidth={2.5} />
-                  </div>
-                  {/* Info */}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                      <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>{inv.invoice_number}</span>
-                      <span style={{ padding: "4px 8px", borderRadius: 8, fontSize: 11, fontWeight: 700, background: inv.status === "Posted" ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)", color: inv.status === "Posted" ? "#10B981" : "#F59E0B" }}>
-                        {inv.status === "Posted" ? (isRTL ? "مرحلة" : "Posted") : (isRTL ? "مسودة" : "Draft")}
-                      </span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 16, color: ds.textSecondary, fontSize: 13, marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}><User size={14}/> {suppliers.find(s => s.id === inv.supplier_id)?.supplier_name || (isRTL ? "مورد عام" : "General")}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}><Calendar size={14}/> {new Date(inv.purchase_date).toLocaleDateString(isRTL ? "ar-YE" : "en-US")}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: isRTL ? "left" : "right" }}>
-                  <div style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>
-                    {inv.grand_total.toLocaleString()}
-                  </div>
-                </div>
-              </motion.div>
-            )
-          })}
-          {invoices.length === 0 && (
-            <div style={{ padding: 40, textAlign: "center", color: ds.textMuted, fontSize: 14, fontWeight: 500 }}>
-              {isRTL ? "لا توجد فواتير مشتريات" : "No purchase invoices found"}
+      {/* List Table Container */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px 24px" }}>
+        <div style={{ background: surface, borderRadius: 16, border: `1px solid ${border}`, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.03)" }}>
+          {invoices.length === 0 ? (
+            <div style={{ padding: 60, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 72, height: 72, borderRadius: 24, background: isDark ? ds.surface2 : "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Package size={32} color={ds.textMuted} strokeWidth={1.5} />
+              </div>
+              <div>
+                <p style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 700 }}>{isRTL ? "لا توجد فواتير مشتريات" : "No purchase invoices"}</p>
+                <p style={{ color: ds.textSecondary, fontSize: 13, marginTop: 4 }}>{isRTL ? "قم بإنشاء فاتورة مشتريات جديدة لإضافتها هنا." : "Create a new purchase invoice to see it here."}</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ width: "100%", overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: isRTL ? "right" : "left", whiteSpace: "nowrap" }}>
+                <thead>
+                  <tr style={{ background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}` }}>
+                    <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%" }}>{isRTL ? "رقم الفاتورة" : "Invoice"}</th>
+                    <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "20%" }}>{isRTL ? "التاريخ" : "Date"}</th>
+                    <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "30%" }}>{isRTL ? "المورد" : "Supplier"}</th>
+                    <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%" }}>{isRTL ? "الحالة" : "Status"}</th>
+                    <th style={{ padding: "14px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%", textAlign: isRTL ? "left" : "right" }}>{isRTL ? "الإجمالي" : "Total"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoices.map((inv) => {
+                    const supplierName = suppliers.find(s => s.id === inv.supplier_id)?.supplier_name || (isRTL ? "مورد عام" : "General");
+                    const isPosted = inv.status === "Posted";
+                    
+                    return (
+                      <tr
+                        key={inv.id}
+                        onClick={() => setSelectedInvoice(inv)}
+                        style={{
+                          cursor: "pointer",
+                          borderBottom: `1px solid ${isDark ? ds.border : "#F1F5F9"}`,
+                          transition: "background 0.2s",
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC"}
+                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <td style={{ padding: "16px 20px", fontWeight: 700, color: ds.textPrimary, direction: "ltr", textAlign: isRTL ? "right" : "left" }}>
+                          {inv.invoice_number}
+                        </td>
+                        <td style={{ padding: "16px 20px", fontSize: 13, color: ds.textSecondary, fontWeight: 500 }}>
+                          {new Date(inv.purchase_date).toLocaleDateString(isRTL ? "ar-YE" : "en-US")}
+                        </td>
+                        <td style={{ padding: "16px 20px", fontWeight: 700, color: ds.textPrimary }}>
+                          {supplierName}
+                        </td>
+                        <td style={{ padding: "16px 20px" }}>
+                          <span style={{ padding: "6px 12px", background: isPosted ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)", color: isPosted ? "#16A34A" : "#F59E0B", borderRadius: 8, fontSize: 12, fontWeight: 800, display: "inline-block" }}>
+                            {isPosted ? (isRTL ? "مرحلة" : "Posted") : (isRTL ? "مسودة" : "Draft")}
+                          </span>
+                        </td>
+                        <td style={{ padding: "16px 20px", fontWeight: 800, color: ds.textPrimary, fontSize: 15, textAlign: isRTL ? "left" : "right" }}>
+                          {inv.grand_total.toLocaleString()}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
@@ -129,11 +152,12 @@ export function PurchaseListScreen({ invoices: initialInvoices, suppliers, onNew
       <AnimatePresence>
         {selectedInvoice && (
           <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            style={{ position: "fixed", inset: 0, zIndex: 9999, background: isDark ? ds.bg : "#F1F5F9" }}
+            key="purchase-detail"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: "fixed", inset: 0, zIndex: 9999 }}
           >
             <PurchaseInvoiceDetailScreen 
               invoice={selectedInvoice}

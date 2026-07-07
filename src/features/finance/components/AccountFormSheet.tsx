@@ -47,10 +47,10 @@ export function AccountFormSheet({ account, onClose, onSave }: AccountFormSheetP
   };
 
   const getInputStyle = () => ({
-    width: "100%", height: 48, padding: "0 16px",
+    width: "100%", height: 60, padding: "0 16px",
     background: isDark ? ds.surface2 : "#FFFFFF",
-    border: `1px solid ${border}`, borderRadius: 12,
-    color: ds.textPrimary, fontSize: 14, fontWeight: 500,
+    border: `1.5px solid ${border}`, borderRadius: 14,
+    color: ds.textPrimary, fontSize: 16, fontWeight: 700,
     outline: "none", fontFamily: "inherit"
   });
 
@@ -81,19 +81,19 @@ export function AccountFormSheet({ account, onClose, onSave }: AccountFormSheetP
 
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-          <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+          <div style={{ marginBottom: 20, display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
             <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "رمز الحساب *" : "Account Code *"}</label>
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "رمز الحساب *" : "Account Code *"}</label>
               <input value={formData.account_code} onChange={e => setFormData(p => ({ ...p, account_code: e.target.value }))} required style={getInputStyle()} />
             </div>
             <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "اسم الحساب *" : "Account Name *"}</label>
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "اسم الحساب *" : "Account Name *"}</label>
               <input value={formData.account_name} onChange={e => setFormData(p => ({ ...p, account_name: e.target.value }))} required style={getInputStyle()} />
             </div>
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الحساب الأب" : "Parent Account"}</label>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "الحساب الأب" : "Parent Account"}</label>
             <select value={formData.parent_account_id} onChange={e => setFormData(p => ({ ...p, parent_account_id: e.target.value }))} style={getInputStyle()}>
               <option value="">{isRTL ? "-- لا يوجد (حساب رئيسي) --" : "-- None (Root Account) --"}</option>
               {parentAccounts.map(a => (
@@ -102,9 +102,9 @@ export function AccountFormSheet({ account, onClose, onSave }: AccountFormSheetP
             </select>
           </div>
 
-          <div style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "طبيعة الحساب" : "Account Type"}</label>
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "طبيعة الحساب" : "Account Type"}</label>
               <select value={formData.account_type} onChange={e => setFormData(p => ({ ...p, account_type: e.target.value }))} style={getInputStyle()}>
                 <option value="Asset">{isRTL ? "أصول" : "Asset"}</option>
                 <option value="Liability">{isRTL ? "خصوم" : "Liability"}</option>
@@ -114,7 +114,7 @@ export function AccountFormSheet({ account, onClose, onSave }: AccountFormSheetP
               </select>
             </div>
             <div>
-              <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الرصيد الطبيعي" : "Normal Balance"}</label>
+              <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "الرصيد الطبيعي" : "Normal Balance"}</label>
               <select value={formData.normal_balance} onChange={e => setFormData(p => ({ ...p, normal_balance: e.target.value }))} style={getInputStyle()}>
                 <option value="Debit">{isRTL ? "مدين" : "Debit"}</option>
                 <option value="Credit">{isRTL ? "دائن" : "Credit"}</option>
@@ -122,22 +122,22 @@ export function AccountFormSheet({ account, onClose, onSave }: AccountFormSheetP
             </div>
           </div>
 
-          <div style={{ marginBottom: 24, background: isDark ? ds.surface2 : "#F8FAFC", padding: 16, borderRadius: 12, border: `1px solid ${border}` }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: ds.textPrimary, fontSize: 14, fontWeight: 600 }}>
-              <input type="checkbox" checked={formData.allow_posting} onChange={e => setFormData(p => ({ ...p, allow_posting: e.target.checked }))} style={{ width: 18, height: 18, accentColor: "#3B82F6" }} />
+          <div style={{ marginBottom: 32, background: isDark ? ds.surface2 : "#F8FAFC", padding: 20, borderRadius: 14, border: `1.5px solid ${border}` }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer", color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>
+              <input type="checkbox" checked={formData.allow_posting} onChange={e => setFormData(p => ({ ...p, allow_posting: e.target.checked }))} style={{ width: 24, height: 24, accentColor: "#3B82F6" }} />
               {isRTL ? "حساب فرعي (يقبل القيود/التسجيل)" : "Leaf Account (Allows Posting)"}
             </label>
-            <p style={{ margin: "8px 0 0 26px", fontSize: 12, color: ds.textSecondary }}>
+            <p style={{ margin: "8px 0 0 36px", fontSize: 14, color: ds.textSecondary }}>
               {isRTL ? "إذا لم تحدده، سيكون حساب تجميعي فقط." : "If unchecked, it will be a group/header account only."}
             </p>
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, height: 48, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 12, color: ds.textSecondary, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+          <div style={{ display: "flex", gap: 16 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, height: 60, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 14, color: ds.textSecondary, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>
               {isRTL ? "إلغاء" : "Cancel"}
             </button>
-            <button type="submit" style={{ flex: 1, height: 48, background: "#3B82F6", border: "none", borderRadius: 12, color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Check size={18} strokeWidth={2.5} /> {isRTL ? "حفظ" : "Save"}
+            <button type="submit" style={{ flex: 2, height: 60, background: "#3B82F6", border: "none", borderRadius: 14, color: "white", fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 20px rgba(59,130,246,0.3)" }}>
+              <Check size={20} strokeWidth={2.5} /> {isRTL ? "حفظ" : "Save"}
             </button>
           </div>
         </form>

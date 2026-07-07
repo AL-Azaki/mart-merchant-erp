@@ -8,6 +8,7 @@ import { useApp } from "@/providers/AppProvider";
 import { MOCK_PRODUCTS, MOCK_CATEGORIES, MOCK_PRODUCT_UNITS, MOCK_INVENTORIES } from "@/core/data/salesMockData";
 import type { Product } from "@/core/types/catalog";
 import { ProductFormSheet } from "../components/ProductFormSheet";
+import { ProductDetailScreen } from "../components/ProductDetailScreen";
 import { ConfirmDeleteModal } from "@/shared/components/ConfirmDeleteModal";
 import { useToast } from "@/providers/ToastProvider";
 
@@ -19,6 +20,7 @@ export function ProductListScreen({ initialShowForm = false, products = MOCK_PRO
   const [showForm, setShowForm] = useState(initialShowForm);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<any | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
   // Advanced filters and sorting state
   const [stockFilter, setStockFilter] = useState<"all" | "in_stock" | "low_stock" | "out_of_stock">("all");
@@ -128,120 +130,101 @@ export function ProductListScreen({ initialShowForm = false, products = MOCK_PRO
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: bg }}>
-      {/* Header */}
-      <div style={{ padding: "20px 24px 16px", background: surface, borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(16, 185, 129, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Package size={22} color="#10B981" strokeWidth={2.5} />
-          </div>
-          <div>
-            <h2 style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>{isRTL ? "المنتجات والمخزون" : "Products & Inventory"}</h2>
-            <p style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 500 }}>{finalFilteredAndSortedProducts.length} {isRTL ? "منتج" : "Products"}</p>
-          </div>
-        </div>
-        <motion.button 
-          title={t.addProduct}
-          whileTap={{ scale: 0.95 }} 
-          onClick={() => { setEditingProduct(null); setShowForm(true); }}
-          style={{ height: 44, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", borderRadius: 12, padding: "0 16px", color: "white", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(16,185,129,0.3)" }}
-        >
-          <Plus size={18} strokeWidth={2.5} />
-          {t.addProduct}
-        </motion.button>
-      </div>
 
-      {/* Toolbar */}
-      <div style={{ padding: "16px 24px 0", flexShrink: 0 }}>
-        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+      {/* Top Search Bar & Actions (Tablet First) */}
+      <div style={{ padding: "24px", flexShrink: 0, display: "flex", gap: 16, flexDirection: "column" }}>
+        <div style={{ display: "flex", gap: 16 }}>
           <div style={{ flex: 1, position: "relative" }}>
-            <Search size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14, pointerEvents: "none" }} />
+            <Search size={24} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 20, pointerEvents: "none" }} />
             <input
               value={search} onChange={e => setSearch(e.target.value)}
-              placeholder={isRTL ? "ابحث عن منتج، كود، باركود..." : "Search products, code, barcode..."}
-              style={{ width: "100%", height: 46, boxSizing: "border-box", paddingInlineStart: 44, paddingInlineEnd: 16, background: surface, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 500, outline: "none", fontFamily: "inherit", boxShadow: "0 2px 6px rgba(0,0,0,0.02)" }}
+              placeholder={isRTL ? "ابحث عن منتج، كود، أو باركود..." : "Search products, code, or barcode..."}
+              style={{ width: "100%", height: 60, boxSizing: "border-box", paddingInlineStart: 56, paddingInlineEnd: 24, background: surface, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 16, color: ds.textPrimary, fontSize: 16, fontWeight: 600, outline: "none", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(0,0,0,0.03)", transition: "0.2s" }}
             />
           </div>
-          
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value as any)}
-            style={{
-              height: 46, padding: "0 12px",
-              background: surface,
-              border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
-              borderRadius: 12,
-              color: ds.textPrimary,
-              fontSize: 13,
-              fontWeight: 600,
-              outline: "none",
-              fontFamily: "inherit",
-              cursor: "pointer",
-              boxShadow: "0 2px 6px rgba(0,0,0,0.02)"
-            }}
+          <motion.button 
+            title={t.addProduct}
+            whileTap={{ scale: 0.95 }} 
+            onClick={() => { setEditingProduct(null); setShowForm(true); }}
+            style={{ height: 60, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", borderRadius: 16, padding: "0 32px", color: "white", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 12, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 8px 20px rgba(16,185,129,0.3)" }}
           >
-            <option value="default">{isRTL ? "الترتيب الافتراضي" : "Default Sort"}</option>
-            <option value="name_asc">{isRTL ? "الاسم (أ - ي)" : "Name (A - Z)"}</option>
-            <option value="name_desc">{isRTL ? "الاسم (ي - أ)" : "Name (Z - A)"}</option>
-            <option value="stock_desc">{isRTL ? "المخزون (الأكثر أولاً)" : "Stock (High to Low)"}</option>
-            <option value="stock_asc">{isRTL ? "المخزون (الأقل أولاً)" : "Stock (Low to High)"}</option>
-            <option value="price_desc">{isRTL ? "السعر (الأعلى أولاً)" : "Price (High to Low)"}</option>
-            <option value="price_asc">{isRTL ? "السعر (الأقل أولاً)" : "Price (Low to High)"}</option>
-            <option value="units_desc">{isRTL ? "عدد الوحدات (الأكثر أولاً)" : "Most Units"}</option>
-          </select>
-
-          <button 
-            title={isRTL ? "خيارات التصفية" : "Filters"} 
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            style={{ 
-              width: 46, height: 46, borderRadius: 12, 
-              background: showAdvancedFilters ? "rgba(16,185,129,0.1)" : surface, 
-              border: `1px solid ${showAdvancedFilters ? "#10B981" : (isDark ? ds.border : "#E2E8F0")}`, 
-              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", 
-              boxShadow: "0 2px 6px rgba(0,0,0,0.02)", color: showAdvancedFilters ? "#10B981" : ds.textSecondary,
-              transition: "all 0.2s"
-            }}
-          >
-            <Filter size={20} />
-          </button>
+            <Plus size={24} strokeWidth={3} />
+            {t.addProduct}
+          </motion.button>
         </div>
 
-        {/* Quick Stats Cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 4 }} className="scrollbar-hide">
+          {[
+            { id: "all", label: isRTL ? "جميع المنتجات" : "All Products" },
+            { id: "in_stock", label: isRTL ? "متوفر" : "In Stock" },
+            { id: "low_stock", label: isRTL ? "منخفض المخزون" : "Low Stock" },
+            { id: "out_of_stock", label: isRTL ? "غير متوفر" : "Out of Stock" },
+          ].map(chip => {
+            const isActive = stockFilter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                onClick={() => setStockFilter(chip.id as any)}
+                style={{
+                  height: 48, padding: "0 24px", borderRadius: 24, flexShrink: 0, cursor: "pointer",
+                  fontSize: 15, fontWeight: 700, fontFamily: "inherit", border: "none", transition: "0.2s",
+                  background: isActive ? "#3B82F6" : isDark ? ds.surface2 : "#E2E8F0",
+                  color: isActive ? "white" : ds.textPrimary,
+                  boxShadow: isActive ? "0 4px 12px rgba(59,130,246,0.3)" : "none"
+                }}
+              >
+                {isActive && <span style={{ marginInlineEnd: 8 }}>✔</span>}
+                {chip.label}
+              </button>
+            )
+          })}
+          
+          <button 
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            style={{ 
+              height: 48, padding: "0 20px", borderRadius: 24, flexShrink: 0, cursor: "pointer",
+              fontSize: 15, fontWeight: 700, fontFamily: "inherit", border: `1px solid ${showAdvancedFilters ? "#10B981" : (isDark ? ds.border : "#CBD5E1")}`, transition: "0.2s",
+              background: showAdvancedFilters ? "rgba(16,185,129,0.1)" : "transparent",
+              color: showAdvancedFilters ? "#10B981" : ds.textSecondary,
+              display: "flex", alignItems: "center", gap: 8
+            }}
+          >
+            <Filter size={18} />
+            {isRTL ? "فلاتر وتصنيفات إضافية" : "More Filters"}
+          </button>
+        </div>
+      </div>
+
+        {/* Large KPI Cards (Tablet First) */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, padding: "0 24px", marginBottom: 24 }}>
           {[
             { id: "all", label: isRTL ? "إجمالي المنتجات" : "Total Products", count: stats.total, color: "#3B82F6", bgTint: "rgba(59,130,246,0.08)" },
             { id: "in_stock", label: isRTL ? "متوفر" : "In Stock", count: stats.inStock, color: "#10B981", bgTint: "rgba(16,185,129,0.08)" },
-            { id: "low_stock", label: isRTL ? "قريب من النفاد" : "Low Stock", count: stats.lowStock, color: "#F59E0B", bgTint: "rgba(245,158,11,0.08)" },
+            { id: "low_stock", label: isRTL ? "منخفض المخزون" : "Low Stock", count: stats.lowStock, color: "#F59E0B", bgTint: "rgba(245,158,11,0.08)" },
             { id: "out_of_stock", label: isRTL ? "غير متوفر" : "Out of Stock", count: stats.outOfStock, color: "#EF4444", bgTint: "rgba(239,68,68,0.08)" },
           ].map(card => {
-            const isActive = stockFilter === card.id;
             return (
-              <motion.button
+              <div
                 key={card.id}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setStockFilter(card.id as any)}
                 style={{
-                  background: isActive ? card.bgTint : surface,
-                  border: `1px solid ${isActive ? card.color : (isDark ? ds.border : "#E2E8F0")}`,
-                  borderRadius: 14,
-                  padding: "12px 16px",
-                  cursor: "pointer",
+                  background: surface,
+                  border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`,
+                  borderRadius: 20,
+                  padding: "20px 24px",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "flex-start",
-                  gap: 4,
-                  textAlign: isRTL ? "right" : "left",
-                  transition: "all 0.2s",
-                  boxShadow: isActive ? `0 4px 12px ${card.color}15` : "0 2px 6px rgba(0,0,0,0.02)"
+                  gap: 8,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.02)"
                 }}
               >
-                <span style={{ fontSize: 20, fontWeight: 800, color: card.color }}>
-                  {card.count}
-                </span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: isActive ? card.color : ds.textSecondary }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: ds.textSecondary }}>
                   {card.label}
                 </span>
-              </motion.button>
+                <span style={{ fontSize: 32, fontWeight: 900, color: card.color }}>
+                  {card.count}
+                </span>
+              </div>
             );
           })}
         </div>
@@ -255,77 +238,125 @@ export function ProductListScreen({ initialShowForm = false, products = MOCK_PRO
               exit={{ height: 0, opacity: 0 }}
               style={{ overflow: "hidden", display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}
             >
-              <div style={{ fontSize: 12, fontWeight: 700, color: ds.textSecondary }}>
-                {isRTL ? "تصفية حسب التصنيف:" : "Filter by Category:"}
-              </div>
-              <div className="scrollbar-hide" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8 }}>
-                {[{ id: null, category_name: t.filterAll }, ...MOCK_CATEGORIES].map(c => {
-                  const active = activeCat === c.id;
-                  return (
-                    <motion.button key={String(c.id)} whileTap={{ scale: 0.95 }} onClick={() => setActiveCat(c.id)}
-                      style={{ flexShrink: 0, padding: "8px 16px", borderRadius: 10, border: `1px solid ${active ? "#10B981" : isDark ? ds.border : "#E2E8F0"}`, cursor: "pointer", fontFamily: "inherit", background: active ? "rgba(16,185,129,0.1)" : surface, color: active ? "#10B981" : ds.textSecondary, fontSize: 13, fontWeight: 600, transition: "all 0.2s" }}>
-                      {c.category_name}
-                    </motion.button>
-                  );
-                })}
+              <div style={{ padding: "0 24px", marginBottom: 20 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: ds.textPrimary, marginBottom: 12 }}>
+                  {isRTL ? "تصفية حسب التصنيف:" : "Filter by Category:"}
+                </div>
+                <div className="scrollbar-hide" style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+                  {[{ id: null, category_name: t.filterAll }, ...MOCK_CATEGORIES].map(c => {
+                    const active = activeCat === c.id;
+                    return (
+                      <button key={String(c.id)} onClick={() => setActiveCat(c.id)}
+                        style={{ flexShrink: 0, padding: "12px 24px", borderRadius: 14, border: `1px solid ${active ? "#10B981" : isDark ? ds.border : "#E2E8F0"}`, cursor: "pointer", fontFamily: "inherit", background: active ? "rgba(16,185,129,0.1)" : surface, color: active ? "#10B981" : ds.textSecondary, fontSize: 15, fontWeight: 700, transition: "0.2s" }}>
+                        {c.category_name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
 
-      {/* Product List */}
+      {/* Product Data Grid */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          <AnimatePresence>
-            {finalFilteredAndSortedProducts.map((p, i) => {
-              const isOut = p.isOut;
-              const isLow = p.isLow;
-              
-              return (
-                <motion.div key={p.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }}
-                  style={{ background: surface, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 2px 8px rgba(0,0,0,0.03)", position: "relative" }}>
-                  
-                  <div style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 12, background: subtle, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
-                       <Package size={28} color={ds.textMuted} strokeWidth={1.5} />
-                    </div>
+        <div style={{ background: surface, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: isRTL ? "right" : "left" }}>
+            <thead>
+              <tr style={{ background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `2px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+                <th style={{ padding: "20px 24px", color: ds.textSecondary, fontSize: 14, fontWeight: 700 }}>{isRTL ? "المنتج" : "Product"}</th>
+                <th style={{ padding: "20px 24px", color: ds.textSecondary, fontSize: 14, fontWeight: 700 }}>{isRTL ? "الكود / الباركود" : "Code / Barcode"}</th>
+                <th style={{ padding: "20px 24px", color: ds.textSecondary, fontSize: 14, fontWeight: 700 }}>{isRTL ? "التصنيف" : "Category"}</th>
+                <th style={{ padding: "20px 24px", color: ds.textSecondary, fontSize: 14, fontWeight: 700 }}>{isRTL ? "سعر البيع الأساسي" : "Base Price"}</th>
+                <th style={{ padding: "20px 24px", color: ds.textSecondary, fontSize: 14, fontWeight: 700 }}>{isRTL ? "حالة المخزون" : "Stock Status"}</th>
+                <th style={{ padding: "20px 24px", color: ds.textSecondary, fontSize: 14, fontWeight: 700, textAlign: "center" }}>{isRTL ? "الإجراءات" : "Actions"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {finalFilteredAndSortedProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: 40, textAlign: "center", color: ds.textMuted, fontSize: 14 }}>
+                      {isRTL ? "لا توجد منتجات تطابق بحثك" : "No products found"}
+                    </td>
+                  </tr>
+                ) : (
+                  finalFilteredAndSortedProducts.map((p, i) => {
+                    const isOut = p.isOut;
+                    const isLow = p.isLow;
                     
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
-                        <h3 style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.product_name}</h3>
-                      </div>
-                      <div style={{ color: ds.textSecondary, fontSize: 12, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                        <Tag size={12} /> {p.category?.category_name || (isRTL ? "بدون فئة" : "Uncategorized")}
-                        <div style={{ width: 4, height: 4, borderRadius: 2, background: ds.textMuted }} />
-                        <Database size={12} /> {p.unitsCount} {isRTL ? "وحدات" : "Units"}
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ color: "#10B981", fontSize: 16, fontWeight: 800 }}>
-                          {p.baseUnit ? p.baseUnit.selling_price.toLocaleString() : "0"} 
-                          <span style={{ fontSize: 11, color: ds.textSecondary, marginInlineStart: 4 }}>{isRTL ? "ر.ي" : "YER"}</span>
-                        </span>
-                        
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, background: isOut ? "rgba(239,68,68,0.1)" : isLow ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)", padding: "4px 8px", borderRadius: 6, color: isOut ? "#EF4444" : isLow ? "#F59E0B" : "#10B981", fontSize: 12, fontWeight: 700 }}>
-                          {isOut || isLow ? <AlertTriangle size={14} /> : null}
-                          {p.stockQuantity}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    return (
+                      <motion.tr key={p.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ delay: i * 0.03 }}
+                        onClick={() => setSelectedProduct(p)}
+                        style={{ borderBottom: i === finalFilteredAndSortedProducts.length - 1 ? "none" : `1px solid ${isDark ? ds.border : "#F1F5F9"}`, cursor: "pointer", transition: "background 0.2s" }}
+                        onMouseOver={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC"}
+                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        {/* Product Info */}
+                        <td style={{ padding: "20px 24px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 12, background: isDark ? ds.surface2 : "#F8FAFC", border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Package size={28} color={ds.textMuted} strokeWidth={1.5} />
+                            </div>
+                            <div>
+                              <h3 style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800, margin: "0 0 6px 0", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis" }}>{p.product_name}</h3>
+                              <span style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+                                <Database size={14} /> {p.unitsCount} {isRTL ? "وحدات تخزين" : "Units"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                  <div style={{ borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, padding: "8px 16px", display: "flex", justifyContent: "flex-end", gap: 8, background: subtle }}>
-                    <button title={isRTL ? "تعديل" : "Edit"} onClick={() => { setEditingProduct(p); setShowForm(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Edit size={16} color={ds.textSecondary} />
-                    </button>
-                    <button title={isRTL ? "حذف" : "Delete"} onClick={() => setProductToDelete(p)} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Trash2 size={16} color="#EF4444" />
-                    </button>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
+                        {/* Code */}
+                        <td style={{ padding: "20px 24px" }}>
+                          <div style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 800 }}>{p.product_code}</div>
+                          {p.baseUnit?.barcode && <div style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 600, marginTop: 6 }}>{p.baseUnit.barcode}</div>}
+                        </td>
+
+                        {/* Category */}
+                        <td style={{ padding: "20px 24px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", background: isDark ? ds.surface2 : "#F1F5F9", color: ds.textSecondary, borderRadius: 8, fontSize: 14, fontWeight: 700 }}>
+                            <Tag size={16} /> {p.category?.category_name || (isRTL ? "بدون فئة" : "Uncategorized")}
+                          </span>
+                        </td>
+
+                        {/* Price */}
+                        <td style={{ padding: "20px 24px" }}>
+                          <div style={{ color: "#10B981", fontSize: 18, fontWeight: 900 }}>
+                            {p.baseUnit ? p.baseUnit.selling_price.toLocaleString() : "0"} 
+                            <span style={{ fontSize: 13, color: ds.textSecondary, marginInlineStart: 6 }}>{isRTL ? "ر.ي" : "YER"}</span>
+                          </div>
+                        </td>
+
+                        {/* Stock */}
+                        <td style={{ padding: "20px 24px" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 10, fontSize: 15, fontWeight: 800, 
+                            background: isOut ? "rgba(239,68,68,0.1)" : isLow ? "rgba(245,158,11,0.1)" : "rgba(16,185,129,0.1)",
+                            color: isOut ? "#EF4444" : isLow ? "#F59E0B" : "#10B981"
+                          }}>
+                            {isOut || isLow ? <AlertTriangle size={18} /> : null}
+                            {p.stockQuantity} {isRTL ? "متوفر" : "Avail."}
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: "20px 24px" }}>
+                          <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+                            <button title={isRTL ? "تعديل" : "Edit"} onClick={(e) => { e.stopPropagation(); setEditingProduct(p); setShowForm(true); }} style={{ width: 44, height: 44, borderRadius: 12, background: isDark ? ds.surface2 : "#F8FAFC", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background=isDark?ds.border:"#E2E8F0"} onMouseOut={e=>e.currentTarget.style.background=isDark?ds.surface2:"#F8FAFC"}>
+                              <Edit size={20} color={ds.textSecondary} />
+                            </button>
+                            <button title={isRTL ? "حذف" : "Delete"} onClick={(e) => { e.stopPropagation(); setProductToDelete(p); }} style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e=>e.currentTarget.style.background="rgba(239,68,68,0.15)"} onMouseOut={e=>e.currentTarget.style.background="rgba(239,68,68,0.1)"}>
+                              <Trash2 size={20} color="#EF4444" />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })
+                )}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -377,6 +408,18 @@ export function ProductListScreen({ initialShowForm = false, products = MOCK_PRO
               onUpdateProducts?.(products.filter(prod => prod.id !== productToDelete.id));
             }}
             itemName={productToDelete.product_name}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {selectedProduct && (
+          <ProductDetailScreen 
+            product={selectedProduct}
+            onBack={() => setSelectedProduct(null)}
+            onEdit={() => {
+              setEditingProduct(selectedProduct);
+              setShowForm(true);
+            }}
           />
         )}
       </AnimatePresence>

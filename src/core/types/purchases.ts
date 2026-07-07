@@ -22,6 +22,7 @@ export interface Supplier {
   phone:            string | null;
   supplier_address: string | null;
   is_active:        boolean;
+  default_currency_id?:   UUID;
   opening_balance?:       number;
   opening_balance_type?:  "debit" | "credit";
   opening_balance_date?:  string;
@@ -46,10 +47,16 @@ export interface PurchaseInvoice {
   invoice_number: string;
   purchase_date:  ISODateString;
   due_date:       ISODateString | null;
+  currency_id:    UUID;
+  exchange_rate:  number;
   sub_total:      number;
   discount_total: number;
   tax_total:      number;
   grand_total:    number;
+  base_sub_total:      number;
+  base_discount_total: number;
+  base_tax_total:      number;
+  base_grand_total:    number;
   status:         PurchaseInvoiceStatus;
   notes:          string | null;
   created_by:     UUID;
@@ -73,6 +80,7 @@ export interface PurchaseInvoiceItem {
   discount:            number;
   tax:                 number;
   line_total:          number;
+  base_line_total:     number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -88,7 +96,10 @@ export interface PurchaseReturn {
   purchase_invoice_id: UUID;     // must link to the original purchase invoice
   return_number:       string;
   return_date:         ISODateString;
+  currency_id:         UUID;
+  exchange_rate:       number;
   total_amount:        number;
+  base_total_amount:   number;
   status:              PurchaseReturnStatus;
   notes:               string | null;
   created_by:          UUID;
@@ -108,6 +119,7 @@ export interface PurchaseReturnItem {
   quantity:           number;
   unit_price:         number;
   line_total:         number;
+  base_line_total:    number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -144,4 +156,5 @@ export interface PurchaseLine {
   tax:             number;
   // computed:
   line_total:      number;
+  base_line_total: number;
 }

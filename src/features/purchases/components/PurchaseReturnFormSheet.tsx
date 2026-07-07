@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { X, RotateCcw, Check, Search, FileText, Package, Database } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
@@ -47,13 +48,18 @@ export function PurchaseReturnFormSheet({ returnRecord, onClose }: PurchaseRetur
 
   const totalReturned = items.reduce((sum, item) => sum + (item.qty_returned * item.price), 0);
 
-  return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", justifyContent: isRTL ? "flex-start" : "flex-end" }}>
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div style={{ position: "fixed", inset: 0, zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-        style={{ position: "absolute", inset: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(6px)" }} />
+        style={{ position: "absolute", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(6px)" }} />
       
-      <motion.div initial={{ x: isRTL ? "-100%" : "100%" }} animate={{ x: 0 }} exit={{ x: isRTL ? "-100%" : "100%" }} transition={{ type: "spring", damping: 28, stiffness: 220 }}
-        style={{ position: "relative", width: "100%", maxWidth: 650, background: bg, height: "100%", display: "flex", flexDirection: "column", boxShadow: "-10px 0 40px rgba(0,0,0,0.15)" }}>
+      <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        style={{ position: "relative", width: "100%", maxWidth: 650, background: bg, maxHeight: "90vh", borderRadius: 24, display: "flex", flexDirection: "column", boxShadow: "0 24px 50px rgba(0,0,0,0.3)", border: `1px solid ${border}`, overflow: "hidden" }}>
         
         {/* Header */}
         <div style={{ padding: "24px 32px", background: surface, borderBottom: `1px solid ${border}`, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexShrink: 0 }}>
@@ -198,6 +204,7 @@ export function PurchaseReturnFormSheet({ returnRecord, onClose }: PurchaseRetur
           )}
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -62,37 +62,37 @@ export function ChartOfAccountsScreen() {
         <div 
           onClick={() => hasChildren && toggleNode(account.id)}
           style={{ 
-            display: "flex", alignItems: "center", padding: "10px 16px", 
-            paddingInlineStart: 16 + depth * 24,
-            borderBottom: `1px solid ${border}`, background: matchesSearch ? (isDark ? ds.surface2 : "#F0FDF4") : surface,
+            display: "flex", alignItems: "center", padding: "16px 20px", 
+            paddingInlineStart: 20 + depth * 32,
+            borderBottom: `1.5px solid ${border}`, background: matchesSearch ? (isDark ? ds.surface2 : "#F0FDF4") : surface,
             cursor: hasChildren ? "pointer" : "default", transition: "background 0.2s"
           }}
         >
-          <div style={{ width: 24, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {hasChildren ? (
-              isExpanded ? <ChevronDown size={18} color={ds.textSecondary} /> : <ChevronRight size={18} color={ds.textSecondary} style={{ transform: isRTL ? "rotate(180deg)" : "none" }} />
+              isExpanded ? <ChevronDown size={22} color={ds.textSecondary} /> : <ChevronRight size={22} color={ds.textSecondary} style={{ transform: isRTL ? "rotate(180deg)" : "none" }} />
             ) : null}
           </div>
           
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
             {account.allow_posting ? (
-              <FileText size={18} color={ds.textSecondary} />
+              <FileText size={22} color={ds.textSecondary} />
             ) : (
-              <Folder size={18} color={getAccountTypeColor(account.account_type)} fill={getAccountTypeColor(account.account_type) + "20"} />
+              <Folder size={22} color={getAccountTypeColor(account.account_type)} fill={getAccountTypeColor(account.account_type) + "20"} />
             )}
             
-            <span style={{ fontWeight: 700, color: ds.textPrimary, width: 80 }}>{account.account_code}</span>
-            <span style={{ fontWeight: account.allow_posting ? 600 : 800, color: account.allow_posting ? ds.textPrimary : ds.textPrimary, flex: 1 }}>{account.account_name}</span>
+            <span style={{ fontWeight: 800, color: ds.textPrimary, width: 100, fontSize: 16 }}>{account.account_code}</span>
+            <span style={{ fontWeight: account.allow_posting ? 600 : 800, color: ds.textPrimary, flex: 1, fontSize: 16 }}>{account.account_name}</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 16, width: 250 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: getAccountTypeColor(account.account_type), width: 80, textAlign: "center", background: getAccountTypeColor(account.account_type) + "15", padding: "4px 8px", borderRadius: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20, width: 280 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: getAccountTypeColor(account.account_type), width: 90, textAlign: "center", background: getAccountTypeColor(account.account_type) + "15", padding: "6px 10px", borderRadius: 8 }}>
               {account.account_type}
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {account.is_system && <ShieldAlert size={16} color="#F59E0B" title={isRTL ? "حساب نظام" : "System Account"} />}
-              <button title={isRTL ? "تعديل الحساب" : "Edit Account"} onClick={() => { setEditingAccount(account); setShowForm(true); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 8 }}>
-                <Edit size={16} color={ds.textSecondary} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              {account.is_system && <ShieldAlert size={20} color="#F59E0B" title={isRTL ? "حساب نظام" : "System Account"} />}
+              <button title={isRTL ? "تعديل الحساب" : "Edit Account"} onClick={(e) => { e.stopPropagation(); setEditingAccount(account); setShowForm(true); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: 12 }}>
+                <Edit size={20} color={ds.textSecondary} />
               </button>
             </div>
           </div>
@@ -111,33 +111,33 @@ export function ChartOfAccountsScreen() {
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: bg }}>
-      <div style={{ padding: "20px 24px", background: surface, borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ padding: "20px 24px", background: surface, borderBottom: `1.5px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <h2 style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800, margin: "0 0 4px 0" }}>{isRTL ? "دليل الحسابات (شجرة الحسابات)" : "Chart of Accounts"}</h2>
-          <p style={{ color: ds.textSecondary, fontSize: 13, margin: 0 }}>{isRTL ? "هيكلة الحسابات المالية للنظام" : "Financial accounts structure"}</p>
+          <h2 style={{ color: ds.textPrimary, fontSize: 22, fontWeight: 900, margin: "0 0 6px 0" }}>{isRTL ? "دليل الحسابات (شجرة الحسابات)" : "Chart of Accounts"}</h2>
+          <p style={{ color: ds.textSecondary, fontSize: 15, margin: 0 }}>{isRTL ? "هيكلة الحسابات المالية للنظام" : "Financial accounts structure"}</p>
         </div>
-        <button title={isRTL ? "إضافة حساب مالي جديد" : "Add new financial account"} onClick={() => { setEditingAccount(null); setShowForm(true); }} style={{ height: 44, background: "#6366F1", border: "none", borderRadius: 12, padding: "0 16px", color: "white", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-          <Plus size={18} strokeWidth={2.5} />
+        <button title={isRTL ? "إضافة حساب مالي جديد" : "Add new financial account"} onClick={() => { setEditingAccount(null); setShowForm(true); }} style={{ height: 60, background: "#6366F1", border: "none", borderRadius: 14, padding: "0 24px", color: "white", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", gap: 10, cursor: "pointer", boxShadow: "0 4px 12px rgba(99,102,241,0.3)" }}>
+          <Plus size={22} strokeWidth={2.5} />
           {isRTL ? "إضافة حساب" : "Add Account"}
         </button>
       </div>
 
-      <div style={{ padding: "16px 24px", background: surface, borderBottom: `1px solid ${border}` }}>
+      <div style={{ padding: "16px 24px", background: surface, borderBottom: `1.5px solid ${border}` }}>
         <div style={{ position: "relative" }}>
-          <Search size={18} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 14 }} />
+          <Search size={22} color={ds.textMuted} style={{ position: "absolute", top: "50%", transform: "translateY(-50%)", [isRTL ? "right" : "left"]: 16 }} />
           <input
             value={search} onChange={e => setSearch(e.target.value)}
             placeholder={isRTL ? "ابحث برقم أو اسم الحساب..." : "Search by code or name..."}
-            style={{ width: "100%", height: 46, paddingInlineStart: 44, paddingInlineEnd: 16, background: isDark ? ds.surface2 : "#F8FAFC", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 500, outline: "none", fontFamily: "inherit" }}
+            style={{ width: "100%", height: 60, paddingInlineStart: 50, paddingInlineEnd: 16, background: isDark ? ds.surface2 : "#F8FAFC", border: `1.5px solid ${border}`, borderRadius: 14, color: ds.textPrimary, fontSize: 16, fontWeight: 700, outline: "none", fontFamily: "inherit" }}
           />
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto" }}>
-        <div style={{ display: "flex", padding: "12px 16px", paddingInlineStart: 56, background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}`, color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>
-          <div style={{ width: 80 }}>{isRTL ? "الرمز" : "Code"}</div>
+        <div style={{ display: "flex", padding: "16px 20px", paddingInlineStart: 72, background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1.5px solid ${border}`, color: ds.textSecondary, fontSize: 15, fontWeight: 800 }}>
+          <div style={{ width: 100 }}>{isRTL ? "الرمز" : "Code"}</div>
           <div style={{ flex: 1 }}>{isRTL ? "اسم الحساب" : "Account Name"}</div>
-          <div style={{ width: 250, display: "flex", justifyContent: "space-between", paddingInlineEnd: 48 }}>
+          <div style={{ width: 280, display: "flex", justifyContent: "space-between", paddingInlineEnd: 60 }}>
             <span>{isRTL ? "النوع" : "Type"}</span>
             <span>{isRTL ? "إجراء" : "Action"}</span>
           </div>

@@ -23,6 +23,7 @@ export interface Customer {
   address:       string | null;
   credit_limit:  number;          // 0 = no credit allowed
   is_active:     boolean;
+  default_currency_id?:   UUID;
   opening_balance?:       number;
   opening_balance_type?:  "debit" | "credit";
   opening_balance_date?:  string;
@@ -66,10 +67,16 @@ export interface Order {
   sales_invoice_id: UUID | null;    // populated after order converts to invoice
   order_number:     string;
   order_date:       ISODateString;
+  currency_id:      UUID;
+  exchange_rate:    number;
   subtotal:         number;
   discount_total:   number;
   tax_total:        number;
   grand_total:      number;
+  base_subtotal:    number;
+  base_discount_total: number;
+  base_tax_total:   number;
+  base_grand_total: number;
   status:           OrderStatus;
   payment_status:   OrderPaymentStatus;
   notes:            string | null;
@@ -91,6 +98,7 @@ export interface OrderItem {
   discount_amount: number;
   tax_amount:      number;
   line_total:      number;
+  base_line_total: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -108,10 +116,16 @@ export interface SalesInvoice {
   invoice_number: string;
   invoice_date:   ISODateString;
   due_date:       ISODateString | null;
+  currency_id:    UUID;
+  exchange_rate:  number;
   sub_total:      number;
   discount_total: number;
   tax_total:      number;
   grand_total:    number;
+  base_sub_total:      number;
+  base_discount_total: number;
+  base_tax_total:      number;
+  base_grand_total:    number;
   payment_status: SalesInvoicePaymentStatus;
   status:         SalesInvoiceStatus;
   notes:          string | null;
@@ -137,6 +151,7 @@ export interface SalesInvoiceItem {
   discount:         number;
   tax:              number;
   line_total:       number;
+  base_line_total:  number;
   cost_total:       number;      // quantity * cost_price
 }
 
@@ -153,7 +168,10 @@ export interface SalesReturn {
   sales_invoice_id: UUID;        // must link to the original invoice
   return_number:    string;
   return_date:      ISODateString;
+  currency_id:      UUID;
+  exchange_rate:    number;
   total_amount:     number;
+  base_total_amount: number;
   status:           SalesReturnStatus;
   notes:            string | null;
   created_by:       UUID;
@@ -176,6 +194,7 @@ export interface SalesReturnItem {
   cost_price:            number;
   cost_total:            number;
   total_price:           number;
+  base_total_price:      number;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -219,5 +238,6 @@ export interface CartLine {
   tax:             number;
   // computed:
   line_total:      number;
+  base_line_total: number;
   cost_total:      number;
 }

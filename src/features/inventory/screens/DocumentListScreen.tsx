@@ -156,69 +156,98 @@ export function DocumentListScreen() {
         })}
       </div>
 
-      {/* Documents Grid view */}
+      {/* Documents Data Grid */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 16 }}>
-          {filteredDocuments.map(doc => {
-            const badge = getCategoryBadge(doc.category);
-            return (
-              <motion.div
-                key={doc.id}
-                layout
-                style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 2px 8px rgba(0,0,0,0.02)" }}
-              >
-                {/* Image / Scanned Thumbnail Area */}
-                <div style={{ height: 140, background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}`, position: "relative", cursor: "pointer" }} onClick={() => setPreviewDoc(doc)}>
-                  <img src={doc.file_url} alt={doc.title} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 8 }} />
-                  <div style={{ position: "absolute", top: 10, [isRTL ? "left" : "right"]: 10, background: badge.bg, color: badge.color, fontSize: 10, fontWeight: 700, padding: "4px 8px", borderRadius: 6 }}>
-                    {badge.label}
-                  </div>
-                  
-                  {/* View icon on hover */}
-                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.15)", opacity: 0, display: "flex", alignItems: "center", justifyContent: "center", transition: "opacity 0.2s" }} className="hover-trigger">
-                    <Eye size={20} color="white" />
-                  </div>
-                </div>
+        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: isRTL ? "right" : "left" }}>
+            <thead>
+              <tr style={{ background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}` }}>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "35%" }}>{isRTL ? "الوثيقة والمرفق" : "Document & Attachment"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>{isRTL ? "رقم المرجع" : "Ref Number"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>{isRTL ? "التواريخ" : "Dates"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{isRTL ? "الإجراءات" : "Actions"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {filteredDocuments.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ padding: 40, textAlign: "center", color: ds.textMuted, fontSize: 14 }}>
+                      {isRTL ? "لا توجد مستندات مؤرشفة تطابق البحث" : "No archived documents found"}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredDocuments.map((doc, i) => {
+                    const badge = getCategoryBadge(doc.category);
+                    const isExpired = doc.expiry_date ? new Date(doc.expiry_date) < new Date() : false;
 
-                {/* Details Area */}
-                <div style={{ padding: 14, flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                  <div>
-                    <h4 style={{ color: ds.textPrimary, fontSize: 13.5, fontWeight: 700, margin: 0, marginBottom: 6, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {doc.title}
-                    </h4>
-                    
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, color: ds.textSecondary, fontSize: 11.5 }}>
-                      <span style={{ fontWeight: 500 }}>{isRTL ? `رقم المرجع: ${doc.ref_number}` : `Ref: ${doc.ref_number}`}</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Calendar size={12} /> {isRTL ? "تاريخ الإصدار:" : "Issued:"} {doc.issue_date}</span>
-                      {doc.expiry_date && (
-                        <span style={{ display: "flex", alignItems: "center", gap: 4, color: new Date(doc.expiry_date) < new Date() ? "#EF4444" : ds.textSecondary }}>
-                          <Calendar size={12} /> {isRTL ? "تاريخ الانتهاء:" : "Expires:"} {doc.expiry_date}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    return (
+                      <motion.tr key={doc.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ delay: i * 0.03 }}
+                        onClick={() => setPreviewDoc(doc)}
+                        style={{ borderBottom: i === filteredDocuments.length - 1 ? "none" : `1px solid ${isDark ? ds.border : "#F1F5F9"}`, cursor: "pointer", transition: "background 0.2s" }}
+                        onMouseOver={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC"}
+                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        {/* Doc Title & Thumbnail */}
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                            <div style={{ width: 48, height: 48, borderRadius: 10, background: isDark ? ds.surface2 : "#F8FAFC", border: `1px solid ${border}`, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {doc.file_url ? (
+                                <img src={doc.file_url} alt={doc.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <FileText size={20} color={ds.textMuted} />
+                              )}
+                            </div>
+                            <div>
+                              <h3 style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700, margin: "0 0 4px 0", display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden", textOverflow: "ellipsis" }}>{doc.title}</h3>
+                              <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 6, background: badge.bg, color: badge.color }}>
+                                {badge.label}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
 
-                  {/* Actions bar */}
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 12, borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, paddingTop: 8 }}>
-                    <button onClick={() => setPreviewDoc(doc)} title={isRTL ? "معاينة الملف" : "Preview Document"} style={{ width: 28, height: 28, borderRadius: 6, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Eye size={14} color={ds.textSecondary} />
-                    </button>
-                    <a href={doc.file_url} download={doc.title} title={isRTL ? "تنزيل الملف" : "Download File"} style={{ width: 28, height: 28, borderRadius: 6, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Download size={14} color={ds.textSecondary} />
-                    </a>
-                    <button onClick={() => setDocToDelete(doc)} title={isRTL ? "حذف الملف" : "Delete File"} style={{ width: 28, height: 28, borderRadius: 6, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Trash2 size={14} color="#EF4444" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-          {filteredDocuments.length === 0 && (
-            <div style={{ gridColumn: "1/-1", padding: 60, textAlign: "center", color: ds.textMuted, fontSize: 13.5 }}>
-              {isRTL ? "لا توجد مستندات مؤرشفة تطابق البحث" : "No archived documents found"}
-            </div>
-          )}
+                        {/* Ref Number */}
+                        <td style={{ padding: "16px 20px", color: ds.textPrimary, fontSize: 14, fontWeight: 600 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <FileCode size={14} color={ds.textMuted} />
+                            {doc.ref_number}
+                          </div>
+                        </td>
+
+                        {/* Dates */}
+                        <td style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 600 }}>
+                          <div style={{ marginBottom: 4 }}>
+                            {isRTL ? "إصدار:" : "Issued:"} <span style={{ color: ds.textPrimary }}>{doc.issue_date}</span>
+                          </div>
+                          {doc.expiry_date && (
+                            <div style={{ color: isExpired ? "#EF4444" : ds.textSecondary }}>
+                              {isRTL ? "انتهاء:" : "Expires:"} {doc.expiry_date}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                            <button title={isRTL ? "معاينة الملف" : "Preview"} onClick={(e) => { e.stopPropagation(); setPreviewDoc(doc); }} style={{ width: 36, height: 36, borderRadius: 10, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseOut={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
+                              <Eye size={16} color={ds.textPrimary} />
+                            </button>
+                            <a href={doc.file_url} download={doc.title} title={isRTL ? "تنزيل الملف" : "Download"} onClick={(e) => e.stopPropagation()} style={{ width: 36, height: 36, borderRadius: 10, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseOut={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
+                              <Download size={16} color={ds.textPrimary} />
+                            </a>
+                            <button title={isRTL ? "حذف المستند" : "Delete"} onClick={(e) => { e.stopPropagation(); setDocToDelete(doc); }} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"} onMouseOut={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}>
+                              <Trash2 size={16} color="#EF4444" />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })
+                )}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
       </div>
 

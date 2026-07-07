@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "motion/react";
 import { X, Check, FileText, Calendar, Lock, Image as ImageIcon, Camera } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
@@ -35,13 +35,19 @@ export function DocumentFormSheet({ onClose, onSave }: DocumentFormSheetProps) {
     setFormData(p => ({ ...p, [name]: value }));
   };
 
-  const handleSimulateCapture = () => {
-    // Generate a beautiful mock captured document using inline SVG
-    const capturedSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400"><rect width="300" height="400" fill="%23FFFBEB" rx="8"/><rect x="20" y="20" width="260" height="360" fill="none" stroke="%23EF4444" stroke-width="2" stroke-dasharray="4 4"/><text x="150" y="100" font-family="sans-serif" font-size="14" font-weight="bold" fill="%23EF4444" text-anchor="middle">صورة مصورة من الكاميرا</text><text x="150" y="150" font-family="sans-serif" font-size="16" font-weight="bold" fill="%231E293B" text-anchor="middle">${formData.title || "وثيقة جديدة"}</text><text x="150" y="200" font-family="sans-serif" font-size="12" fill="%2364748B" text-anchor="middle">المرجع: ${formData.ref_number || "بدون رقم"}</text><line x1="50" y1="250" x2="250" y2="250" stroke="%23EF4444" stroke-width="2"/><text x="150" y="320" font-family="sans-serif" font-size="11" fill="%2364748B" text-anchor="middle">تم التصوير والمزامنة بنجاح</text></svg>`;
-    
-    setCapturedImage(capturedSvg);
-    setIsCameraActive(false);
-    toast.success(isRTL ? "تم التقاط صورة المستند بنجاح" : "Document photo captured successfully");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCapturedImage(reader.result as string);
+        toast.success(isRTL ? "تم إرفاق المستند بنجاح" : "Document attached successfully");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -146,14 +152,29 @@ export function DocumentFormSheet({ onClose, onSave }: DocumentFormSheetProps) {
                 ) : (
                   <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
                     <div style={{ display: "flex", gap: 12 }}>
-                      <button type="button" onClick={handleSimulateCapture} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: "#8B5CF6", color: "white", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      <input 
+                        type="file" 
+                        accept="image/*,application/pdf" 
+                        ref={fileInputRef} 
+                        style={{ display: "none" }} 
+                        onChange={handleFileUpload} 
+                      />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="environment"
+                        ref={cameraInputRef} 
+                        style={{ display: "none" }} 
+                        onChange={handleFileUpload} 
+                      />
+                      <button type="button" onClick={() => cameraInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: "#8B5CF6", color: "white", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                         <Camera size={14} /> {isRTL ? "تصوير بالكاميرا" : "Capture Photo"}
                       </button>
-                      <button type="button" onClick={handleSimulateCapture} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: isDark ? ds.surface : "#FFFFFF", color: ds.textPrimary, border: `1px solid ${border}`, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      <button type="button" onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, background: isDark ? ds.surface : "#FFFFFF", color: ds.textPrimary, border: `1px solid ${border}`, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                         <ImageIcon size={14} /> {isRTL ? "معرض الصور" : "Gallery Upload"}
                       </button>
                     </div>
-                    <span style={{ fontSize: 11, color: ds.textMuted }}>{isRTL ? "صوّر الفاتورة أو العقد مباشرة لتخزينه في الأرشيف" : "Scan documents and receipts instantly"}</span>
+                    <span style={{ fontSize: 11, color: ds.textMuted }}>{isRTL ? "صوّر الفاتورة أو العقد مباشرة أو ارفعه من جهازك" : "Scan documents and receipts or upload"}</span>
                   </div>
                 )}
               </div>

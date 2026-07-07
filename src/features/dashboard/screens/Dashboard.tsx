@@ -75,26 +75,53 @@ export function Dashboard({ onLogout }: DashboardProps) {
   // ── Stat cards ──────────────────────────────────────────────────────────────
   const statCards = [
     {
-      Icon: DollarSign,
-      label: t.todaySales,
-      value: stats.today_sales.toLocaleString(),
+      Icon: ShoppingCart,
+      label: isRTL ? "مبيعات اليوم" : "Today's Sales",
+      value: "45,000",
       unit: t.currencyYER,
       color: "#3B82F6",
       bg: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
       border: isDark ? "rgba(59, 130, 246, 0.25)" : "#BFDBFE",
     },
     {
-      Icon: TrendingDown,
-      label: isRTL ? "ديون العملاء (لنا)" : "Receivables (Debts)",
-      value: "850,000",
+      Icon: ShoppingBag,
+      label: isRTL ? "مشتريات اليوم" : "Today's Purchases",
+      value: "12,000",
+      unit: t.currencyYER,
+      color: "#EC4899",
+      bg: isDark ? "rgba(236, 72, 153, 0.15)" : "#FDF2F8",
+      border: isDark ? "rgba(236, 72, 153, 0.25)" : "#FBCFE8",
+    },
+    {
+      Icon: DollarSign,
+      label: isRTL ? "رصيد الصندوق" : "Safe Balance",
+      value: "150,000",
       unit: t.currencyYER,
       color: "#10B981",
       bg: isDark ? "rgba(16, 185, 129, 0.15)" : "#F0FDFA",
       border: isDark ? "rgba(16, 185, 129, 0.25)" : "#A7F3D0",
     },
     {
+      Icon: CreditCard,
+      label: isRTL ? "رصيد البنك" : "Bank Balance",
+      value: "1,450,000",
+      unit: t.currencyYER,
+      color: "#8B5CF6",
+      bg: isDark ? "rgba(139, 92, 246, 0.15)" : "#F5F3FF",
+      border: isDark ? "rgba(139, 92, 246, 0.25)" : "#DDD6FE",
+    },
+    {
+      Icon: TrendingDown,
+      label: isRTL ? "العملاء (لهم)" : "Receivables",
+      value: "850,000",
+      unit: t.currencyYER,
+      color: "#14B8A6",
+      bg: isDark ? "rgba(20, 184, 166, 0.15)" : "#F0FDFA",
+      border: isDark ? "rgba(20, 184, 166, 0.25)" : "#99F6E4",
+    },
+    {
       Icon: TrendingUp,
-      label: isRTL ? "ديون الموردين (علينا)" : "Supplier Payables",
+      label: isRTL ? "الموردون (علينا)" : "Payables",
       value: "420,000",
       unit: t.currencyYER,
       color: "#EF4444",
@@ -102,23 +129,35 @@ export function Dashboard({ onLogout }: DashboardProps) {
       border: isDark ? "rgba(239, 68, 68, 0.25)" : "#FCA5A5",
     },
     {
-      Icon: CreditCard,
-      label: isRTL ? "المصروفات التشغيلية" : "Operating Expenses",
-      value: "120,000",
+      Icon: PieChart,
+      label: isRTL ? "الأرباح" : "Profits",
+      value: "28,500",
       unit: t.currencyYER,
       color: "#F59E0B",
       bg: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB",
       border: isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A",
     },
+    {
+      Icon: FileText,
+      label: isRTL ? "المصروفات" : "Expenses",
+      value: "18,000",
+      unit: t.currencyYER,
+      color: "#F97316",
+      bg: isDark ? "rgba(249, 115, 22, 0.15)" : "#FFF7ED",
+      border: isDark ? "rgba(249, 115, 22, 0.25)" : "#FFEDD5",
+    },
   ];
 
   // ── Quick actions (Ordered by priority) ──────────────────────────────────────
   const quickActions = [
-    { id: "newSale", Icon: ShoppingCart, label: t.newSale, color: "#3B82F6", tab: 1 },
-    { id: "addProduct", Icon: Plus, label: t.addProduct, color: "#10B981", tab: 2 },
-    { id: "newCustomer", Icon: User, label: t.newCustomer, color: "#8B5CF6", tab: 2 },
-    { id: "newPurchase", Icon: ShoppingBag, label: isRTL ? "شراء بضاعة" : "New Purchase", color: "#EC4899", tab: 2 },
-    { id: "expenses", Icon: CreditCard, label: isRTL ? "صرفيات" : "Expenses", color: "#EF4444", tab: 3 },
+    { id: "newSale", Icon: ShoppingCart, label: isRTL ? "فاتورة مبيعات" : "Sales Invoice", desc: isRTL ? "نقطة بيع سريعة" : "Fast POS", color: "#3B82F6", tab: 1 },
+    { id: "newPurchase", Icon: ShoppingBag, label: isRTL ? "فاتورة مشتريات" : "Purchase Invoice", desc: isRTL ? "إدخال مشتريات" : "Enter stock", color: "#EC4899", tab: 2 },
+    { id: "receiptVoucher", Icon: TrendingDown, label: isRTL ? "سند قبض" : "Receipt Voucher", desc: isRTL ? "استلام نقدية" : "Receive cash", color: "#10B981", tab: 3 },
+    { id: "paymentVoucher", Icon: TrendingUp, label: isRTL ? "سند صرف" : "Payment Voucher", desc: isRTL ? "صرف نقدية" : "Pay cash", color: "#EF4444", tab: 3 },
+    { id: "newCustomer", Icon: User, label: isRTL ? "عميل جديد" : "New Customer", desc: isRTL ? "إضافة للقائمة" : "Add to list", color: "#8B5CF6", tab: 2 },
+    { id: "newSupplier", Icon: Users, label: isRTL ? "مورد جديد" : "New Supplier", desc: isRTL ? "إضافة للقائمة" : "Add to list", color: "#14B8A6", tab: 2 },
+    { id: "addProduct", Icon: Plus, label: isRTL ? "منتج جديد" : "New Product", desc: isRTL ? "تعريف صنف" : "Define item", color: "#F59E0B", tab: 2 },
+    { id: "stocktake", Icon: Box, label: isRTL ? "جرد مخزون" : "Stocktake", desc: isRTL ? "تسوية الكميات" : "Adjust qty", color: "#6366F1", tab: 2 },
   ];
 
   // ── Render: Home tab ────────────────────────────────────────────────────────
@@ -140,14 +179,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </span>
       </div>
 
-      {/* Stat cards in one row */}
+      {/* Stat cards in Grid */}
       <div
         style={{
-          display: "flex",
-          gap: 12,
-          marginBottom: 24,
-          overflowX: "auto",
-          paddingBottom: 4,
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gap: 16,
+          marginBottom: 32,
         }}
       >
         {statCards.map((s, i) => (
@@ -155,45 +193,44 @@ export function Dashboard({ onLogout }: DashboardProps) {
             key={i}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08, type: "spring", stiffness: 300, damping: 24 }}
-            whileHover={{ y: -1, boxShadow: ds.shadowMd }}
+            transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 24 }}
+            whileHover={{ y: -2, boxShadow: ds.shadowMd }}
             style={{
               background: isDark ? ds.surface : "#FFFFFF",
-              borderRadius: 16,
-              padding: "12px",
+              borderRadius: 20,
+              padding: "20px",
               boxShadow: ds.shadowSm,
-              border: `1px solid ${isDark ? ds.border : "#F1F5F9"}`,
+              border: `1.5px solid ${isDark ? ds.border : "#F1F5F9"}`,
               display: "flex",
               alignItems: "center",
-              gap: 12,
+              gap: 16,
               position: "relative",
               overflow: "hidden",
-              flex: "1 0 160px",
             }}
           >
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
+                width: 52,
+                height: 52,
+                borderRadius: 16,
                 background: s.bg,
-                border: `1px solid ${s.border}`,
+                border: `1.5px solid ${s.border}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
               }}
             >
-              <s.Icon size={16} color={s.color} strokeWidth={2.5} />
+              <s.Icon size={24} color={s.color} strokeWidth={2.5} />
             </div>
             
             <div style={{ flex: 1, minWidth: 0 }}>
               <div
                 style={{
                   color: ds.textSecondary,
-                  fontSize: 11,
+                  fontSize: 14,
                   fontWeight: 700,
-                  marginBottom: 2,
+                  marginBottom: 6,
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   textOverflow: "ellipsis"
@@ -205,20 +242,20 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 style={{
                   display: "flex",
                   alignItems: "baseline",
-                  gap: 4,
+                  gap: 6,
                 }}
               >
                 <span
                   style={{
                     color: ds.textPrimary,
-                    fontSize: 15,
-                    fontWeight: 800,
+                    fontSize: 22,
+                    fontWeight: 900,
                     lineHeight: 1,
                   }}
                 >
                   {s.value}
                 </span>
-                <span style={{ color: ds.textMuted, fontSize: 10, fontWeight: 600 }}>
+                <span style={{ color: ds.textMuted, fontSize: 13, fontWeight: 700 }}>
                   {s.unit}
                 </span>
               </div>
@@ -227,72 +264,91 @@ export function Dashboard({ onLogout }: DashboardProps) {
         ))}
       </div>
 
-      {/* Quick actions */}
-      <div style={{ marginBottom: 28 }}>
+      {/* Quick actions Grid */}
+      <div style={{ marginBottom: 32 }}>
         <h3
           style={{
             color: ds.textPrimary,
-            fontSize: 16,
-            fontWeight: 700,
-            marginBottom: 16,
+            fontSize: 18,
+            fontWeight: 800,
+            marginBottom: 20,
           }}
         >
-          {t.quickActions}
+          {isRTL ? "العمليات السريعة" : "Quick Actions"}
         </h3>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
-            gap: 10,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 16,
           }}
         >
           {quickActions.map((a, i) => (
             <motion.button
               key={i}
               onClick={() => handleQuickAction(a.id, a.tab)}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + i * 0.08, type: "spring" }}
-              whileTap={{ scale: 0.92 }}
+              transition={{ delay: 0.2 + i * 0.05, type: "spring" }}
+              whileTap={{ scale: 0.95 }}
               style={{
-                padding: "16px 8px",
+                padding: "20px 16px",
                 background: isDark ? ds.surface : "#FFFFFF",
-                border: `1px solid ${isDark ? ds.border : "#F1F5F9"}`,
+                border: `1.5px solid ${isDark ? ds.border : "#F1F5F9"}`,
                 borderRadius: 20,
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 10,
+                gap: 12,
                 boxShadow: ds.shadowSm,
                 fontFamily: "inherit",
-                transition: "border-color 0.2s, box-shadow 0.2s",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = a.color;
+                e.currentTarget.style.boxShadow = `0 4px 12px ${a.color}20`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = isDark ? ds.border : "#F1F5F9";
+                e.currentTarget.style.boxShadow = ds.shadowSm;
               }}
             >
               <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 14,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 16,
                   background: isDark ? `${a.color}15` : `${a.color}10`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <a.Icon size={22} color={a.color} strokeWidth={2.2} />
+                <a.Icon size={28} color={a.color} strokeWidth={2.5} />
               </div>
-              <span
-                style={{
-                  color: ds.textPrimary,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  textAlign: "center",
-                  lineHeight: 1.2,
-                }}
-              >
-                {a.label}
-              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "center" }}>
+                <span
+                  style={{
+                    color: ds.textPrimary,
+                    fontSize: 15,
+                    fontWeight: 800,
+                    textAlign: "center",
+                  }}
+                >
+                  {a.label}
+                </span>
+                <span
+                  style={{
+                    color: ds.textSecondary,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textAlign: "center",
+                  }}
+                >
+                  {a.desc}
+                </span>
+              </div>
             </motion.button>
           ))}
         </div>
@@ -325,12 +381,17 @@ export function Dashboard({ onLogout }: DashboardProps) {
           initialAction={
             quickAction === "addProduct" ? "new" : 
             quickAction === "newCustomer" ? "newCustomer" : 
+            quickAction === "newSupplier" ? "newSupplier" : 
             quickAction === "newPurchase" ? "newPurchase" : 
             null
           } 
         />
       );
-      case 3: return <FinanceModule initialAction={quickAction === "expenses" ? "expense" : null} />;
+      case 3: return <FinanceModule initialAction={
+        quickAction === "receiptVoucher" ? "income" : 
+        quickAction === "paymentVoucher" ? "expense" : 
+        null
+      } />;
       case 4: return settingsView === "users" ? <UsersRolesModule onBack={() => setSettingsView("main")} /> : renderSettings();
       default: return renderHome();
     }

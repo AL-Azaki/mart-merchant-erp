@@ -73,10 +73,10 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
 
   const getInputStyle = (name: string) => ({
     width: "100%", boxSizing: "border-box" as const,
-    paddingInlineStart: 52, paddingInlineEnd: 16, height: 52,
+    paddingInlineStart: 52, paddingInlineEnd: 16, height: 56,
     background: isDark ? ds.surface2 : "#F8FAFC",
     border: `1.5px solid ${focusedInput === name ? "#8B5CF6" : isDark ? ds.border : "#E2E8F0"}`,
-    borderRadius: 14, color: ds.textPrimary, fontSize: 15, fontWeight: 600, outline: "none", fontFamily: "inherit",
+    borderRadius: 14, color: ds.textPrimary, fontSize: 16, fontWeight: 700, outline: "none", fontFamily: "inherit",
     transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
     boxShadow: focusedInput === name ? "0 4px 12px rgba(139,92,246,0.15)" : "0 2px 4px rgba(0,0,0,0.02)"
   });
@@ -103,11 +103,11 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
         {/* Header */}
         <div style={{ background: surface, padding: "24px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 10 }}>
           <div>
-            <h2 style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800, marginBottom: 4 }}>{title}</h2>
-            <p style={{ color: ds.textSecondary, fontSize: 13 }}>{isRTL ? "أدخل تفاصيل العميل بدقة" : "Enter customer details accurately"}</p>
+            <h2 style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 800, marginBottom: 4 }}>{title}</h2>
+            <p style={{ color: ds.textSecondary, fontSize: 14 }}>{isRTL ? "أدخل تفاصيل العميل بدقة" : "Enter customer details accurately"}</p>
           </div>
-          <button onClick={onClose} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 40, height: 40, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseLeave={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
-            <X size={20} color={ds.textPrimary} />
+          <button onClick={onClose} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 44, height: 44, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseLeave={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
+            <X size={22} color={ds.textPrimary} />
           </button>
         </div>
 
@@ -179,14 +179,14 @@ export function ContactFormSheet({ contact, role, onClose, onSave }: ContactForm
         </div>
       </form>
 
-      <div style={{ background: surface, borderTop: `1px solid ${border}`, padding: "20px 24px", display: "flex", gap: 12, zIndex: 10 }}>
-        <button type="button" onClick={onClose} style={{ flex: 1, height: 52, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 14, color: ds.textSecondary, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+      <div style={{ background: surface, borderTop: `1px solid ${border}`, padding: "20px 24px", display: "flex", gap: 16, zIndex: 10 }}>
+        <button type="button" onClick={onClose} style={{ flex: 1, height: 60, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 14, color: ds.textSecondary, fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
           {isRTL ? "إلغاء" : "Cancel"}
         </button>
         <button type="button" disabled={!formData.customer_name?.trim()} onClick={handleSubmit}
-          style={{ flex: 2, height: 52, background: "linear-gradient(135deg, #8B5CF6, #6D28D9)", border: "none", borderRadius: 14, color: "white", fontSize: 15, fontWeight: 700, cursor: formData.customer_name?.trim() ? "pointer" : "not-allowed", opacity: formData.customer_name?.trim() ? 1 : 0.6, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 6px 20px rgba(139,92,246,0.3)" }}
+          style={{ flex: 2, height: 60, background: "linear-gradient(135deg, #8B5CF6, #6D28D9)", border: "none", borderRadius: 14, color: "white", fontSize: 16, fontWeight: 800, cursor: formData.customer_name?.trim() ? "pointer" : "not-allowed", opacity: formData.customer_name?.trim() ? 1 : 0.6, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 6px 20px rgba(139,92,246,0.3)" }}
         >
-          <Check size={20} strokeWidth={2.5} /> {isRTL ? "حفظ البيانات" : "Save"}
+          <Check size={24} strokeWidth={2.5} /> {isRTL ? "حفظ البيانات" : "Save"}
         </button>
       </div>
     </motion.div>

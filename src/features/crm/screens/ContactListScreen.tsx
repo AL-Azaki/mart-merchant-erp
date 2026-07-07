@@ -9,7 +9,8 @@ import { useApp } from "@/providers/AppProvider";
 import { MOCK_CUSTOMERS } from "@/core/data/salesMockData";
 import type { Customer } from "@/core/types/sales";
 import { ContactFormSheet } from "../components/ContactFormSheet";
-import { ConfirmDeleteModal } from "@/shared/components/ConfirmDeleteModal";
+import { CustomerStatementScreen } from "../components/CustomerStatementScreen";
+import { useFinancialStore } from "@/core/engine/useFinancialStore";
 
 export function ContactListScreen({ customers, onUpdateCustomers, onBack, initialShowForm = false }: { customers: Customer[], onUpdateCustomers: (c: Customer[]) => void, onBack?: () => void, initialShowForm?: boolean }) {
   const { t, isDark, isRTL, ds } = useApp();
@@ -19,8 +20,8 @@ export function ContactListScreen({ customers, onUpdateCustomers, onBack, initia
   const [showForm, setShowForm] = useState(initialShowForm);
   const [editingContact, setEditingContact] = useState<Customer | null>(null);
   const [contactToDelete, setContactToDelete] = useState<Customer | null>(null);
-  
-
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const store = useFinancialStore();
 
   const contacts = useMemo(() => {
     return customers.filter(c => {
@@ -71,62 +72,75 @@ export function ContactListScreen({ customers, onUpdateCustomers, onBack, initia
         </div>
       </div>
 
-      {/* Contacts List */}
+      {/* Contacts List (Professional Data Grid) */}
       <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-          <AnimatePresence>
-            {contacts.map((c, i) => {
-              // Now we don't have balance locally on Customer type natively from DB unless computed
-              // We'll mock it here or remove the UI portion for now, but keeping simple for UI
-              return (
-                <motion.div key={c.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ delay: i * 0.05 }}
-                  style={{ background: surface, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                  
-                  <div style={{ padding: 16, display: "flex", gap: 16, alignItems: "flex-start" }}>
-                    <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <User size={24} color="#8B5CF6" />
-                    </div>
-                    
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h3 style={{ color: ds.textPrimary, fontSize: 15, fontWeight: 700, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {c.customer_name}
-                      </h3>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                        {c.phone && (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, color: ds.textSecondary, fontSize: 13 }}>
-                            <Phone size={14} /> <span style={{ direction: "ltr" }}>{c.phone}</span>
+        <div style={{ background: surface, borderRadius: 16, border: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: isRTL ? "right" : "left" }}>
+            <thead>
+              <tr style={{ background: subtle, borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "30%" }}>{isRTL ? "اسم العميل / المؤسسة" : "Customer Name"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "20%" }}>{isRTL ? "معلومات التواصل" : "Contact Info"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%" }}>{isRTL ? "الحد الائتماني" : "Credit Limit"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "15%" }}>{isRTL ? "حالة الحساب" : "Status"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "10%", textAlign: "center" }}>{isRTL ? "الإجراءات" : "Actions"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {contacts.length === 0 ? (
+                  <tr><td colSpan={5} style={{ padding: 40, textAlign: "center", color: ds.textMuted }}>{isRTL ? "لا يوجد عملاء." : "No customers found."}</td></tr>
+                ) : (
+                  contacts.map((c, i) => (
+                    <motion.tr 
+                      key={c.id} 
+                      layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ delay: i * 0.03 }}
+                      onClick={() => setSelectedCustomer(c)}
+                      style={{ borderBottom: i === contacts.length - 1 ? "none" : `1px solid ${isDark ? ds.border : "#F1F5F9"}`, cursor: "pointer", transition: "background 0.2s" }}
+                      onMouseOver={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC"}
+                      onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      <td style={{ padding: "16px 20px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <User size={20} color="#8B5CF6" />
                           </div>
-                        )}
-
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ padding: "0 16px 16px" }}>
-                     <div style={{ background: isDark ? ds.surface2 : "#F8FAFC", borderRadius: 12, padding: 12, display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${isDark ? ds.border : "#E2E8F0"}` }}>
-                        <span style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600 }}>
-                          {isRTL ? "الحد الائتماني" : "Credit Limit"}
-                        </span>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800 }}>
-                            {c.credit_limit.toLocaleString()} {isRTL ? "ر.ي" : "YER"}
-                          </span>
+                          <div>
+                            <h3 style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700, margin: "0 0 4px 0" }}>{c.customer_name}</h3>
+                            <div style={{ color: ds.textSecondary, fontSize: 12 }}>{c.address || (isRTL ? "بدون عنوان" : "No Address")}</div>
+                          </div>
                         </div>
-                     </div>
-                  </div>
+                      </td>
 
-                  <div style={{ borderTop: `1px solid ${isDark ? ds.border : "#F1F5F9"}`, padding: "8px 16px", display: "flex", justifyContent: "flex-end", gap: 8, background: subtle }}>
-                    <button title={isRTL ? "تعديل بيانات العميل" : "Edit Customer"} onClick={() => { setEditingContact(c); setShowForm(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Edit size={16} color={ds.textSecondary} />
-                    </button>
-                    <button title={isRTL ? "حذف العميل" : "Delete Customer"} onClick={() => setContactToDelete(c)} style={{ width: 32, height: 32, borderRadius: 8, background: "none", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                      <Trash2 size={16} color="#EF4444" />
-                    </button>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </AnimatePresence>
+                      <td style={{ padding: "16px 20px", color: ds.textPrimary, fontSize: 14, fontWeight: 600 }}>
+                        {c.phone ? <div style={{ display: "flex", alignItems: "center", gap: 6, direction: "ltr", justifyContent: isRTL ? "flex-end" : "flex-start" }}><Phone size={14} color={ds.textSecondary} /> {c.phone}</div> : <span style={{ color: ds.textMuted }}>-</span>}
+                      </td>
+
+                      <td style={{ padding: "16px 20px", color: ds.textPrimary, fontSize: 15, fontWeight: 800 }}>
+                        {c.credit_limit > 0 ? c.credit_limit.toLocaleString() : "-"}
+                      </td>
+
+                      <td style={{ padding: "16px 20px" }}>
+                        <span style={{ padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: c.is_active ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", color: c.is_active ? "#10B981" : "#EF4444" }}>
+                          {c.is_active ? (isRTL ? "نشط" : "Active") : (isRTL ? "موقوف" : "Inactive")}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: "16px 20px" }}>
+                        <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                          <button title={isRTL ? "تعديل بيانات العميل" : "Edit Customer"} onClick={(e) => { e.stopPropagation(); setEditingContact(c); setShowForm(true); }} style={{ width: 36, height: 36, borderRadius: 10, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseOut={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
+                            <Edit size={16} color={ds.textPrimary} />
+                          </button>
+                          <button title={isRTL ? "حذف العميل" : "Delete Customer"} onClick={(e) => { e.stopPropagation(); setContactToDelete(c); }} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"} onMouseOut={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}>
+                            <Trash2 size={16} color="#EF4444" />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -150,6 +164,7 @@ export function ContactListScreen({ customers, onUpdateCustomers, onBack, initia
                   created_at: new Date().toISOString(), updated_at: new Date().toISOString(), deleted_at: null
                 };
                 onUpdateCustomers([newContact, ...customers]);
+                store.addCustomer(newContact);
               }
               setShowForm(false);
             }} 
@@ -167,6 +182,24 @@ export function ContactListScreen({ customers, onUpdateCustomers, onBack, initia
             }}
             itemName={contactToDelete.customer_name}
           />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedCustomer && (
+          <motion.div
+            key="customer-statement"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: "fixed", inset: 0, zIndex: 9999 }}
+          >
+            <CustomerStatementScreen 
+              customer={selectedCustomer} 
+              onBack={() => setSelectedCustomer(null)} 
+            />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

@@ -77,10 +77,10 @@ export function JournalEntryFormSheet({ onClose, onSave }: JournalEntryFormSheet
   };
 
   const getInputStyle = () => ({
-    width: "100%", height: 40, padding: "0 12px",
+    width: "100%", height: 60, padding: "0 16px",
     background: isDark ? ds.surface2 : "#FFFFFF",
-    border: `1px solid ${border}`, borderRadius: 8,
-    color: ds.textPrimary, fontSize: 13, fontWeight: 500,
+    border: `1.5px solid ${border}`, borderRadius: 14,
+    color: ds.textPrimary, fontSize: 16, fontWeight: 700,
     outline: "none", fontFamily: "inherit"
   });
 
@@ -112,21 +112,21 @@ export function JournalEntryFormSheet({ onClose, onSave }: JournalEntryFormSheet
           <div style={{ padding: 24, borderBottom: `1px solid ${border}` }}>
             <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16 }}>
               <div>
-                <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "البيان / الوصف" : "Description"}</label>
+                <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "البيان / الوصف" : "Description"}</label>
                 <input value={description} onChange={e => setDescription(e.target.value)} required style={getInputStyle()} placeholder={isRTL ? "مثال: إثبات فاتورة مشتريات" : "e.g. Record purchase invoice"} />
               </div>
               <div>
-                <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "التاريخ" : "Date"}</label>
+                <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "التاريخ" : "Date"}</label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} required style={getInputStyle()} />
               </div>
               <div>
-                <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "رقم المرجع" : "Reference"}</label>
+                <label style={{ display: "block", color: ds.textSecondary, fontSize: 15, fontWeight: 800, marginBottom: 12 }}>{isRTL ? "رقم المرجع" : "Reference"}</label>
                 <input value={reference} onChange={e => setReference(e.target.value)} style={getInputStyle()} placeholder="INV-001" />
               </div>
             </div>
           </div>
 
-          <div style={{ padding: "16px 24px", background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}`, display: "flex", gap: 16, color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>
+          <div style={{ padding: "20px 24px", background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}`, display: "flex", gap: 16, color: ds.textSecondary, fontSize: 16, fontWeight: 800 }}>
             <div style={{ flex: 2 }}>{isRTL ? "الحساب" : "Account"}</div>
             <div style={{ flex: 2 }}>{isRTL ? "البيان" : "Description"}</div>
             <div style={{ flex: 1, textAlign: "center" }}>{isRTL ? "مدين" : "Debit"}</div>
@@ -161,8 +161,8 @@ export function JournalEntryFormSheet({ onClose, onSave }: JournalEntryFormSheet
                 </div>
               </div>
             ))}
-            <button type="button" onClick={addLine} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#10B981", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 13, cursor: "pointer", marginTop: 8 }}>
-              <Plus size={16} /> {isRTL ? "إضافة سطر" : "Add Line"}
+            <button type="button" onClick={addLine} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#10B981", display: "flex", alignItems: "center", gap: 12, fontWeight: 800, fontSize: 16, cursor: "pointer", marginTop: 8 }}>
+              <Plus size={20} strokeWidth={2.5} /> {isRTL ? "إضافة سطر" : "Add Line"}
             </button>
           </div>
 
@@ -186,11 +186,11 @@ export function JournalEntryFormSheet({ onClose, onSave }: JournalEntryFormSheet
             </div>
 
             <div style={{ display: "flex", gap: 12 }}>
-              <button type="button" onClick={onClose} style={{ height: 48, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 12, padding: "0 24px", color: ds.textSecondary, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+              <button type="button" onClick={onClose} style={{ height: 60, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 14, padding: "0 24px", color: ds.textSecondary, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>
                 {isRTL ? "إلغاء" : "Cancel"}
               </button>
-              <button type="submit" disabled={!isBalanced} style={{ height: 48, background: isBalanced ? "#10B981" : ds.border, border: "none", borderRadius: 12, padding: "0 24px", color: "white", fontSize: 15, fontWeight: 700, cursor: isBalanced ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 8 }}>
-                <Check size={18} strokeWidth={2.5} /> {isRTL ? "حفظ وترحيل" : "Post Entry"}
+              <button type="submit" disabled={!isBalanced} style={{ height: 60, background: isBalanced ? "#10B981" : ds.border, border: "none", borderRadius: 14, padding: "0 32px", color: "white", fontSize: 16, fontWeight: 800, cursor: isBalanced ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 10, boxShadow: isBalanced ? "0 6px 20px rgba(16,185,129,0.3)" : "none" }}>
+                <Check size={20} strokeWidth={2.5} /> {isRTL ? "حفظ وترحيل" : "Post Entry"}
               </button>
             </div>
           </div>

@@ -6,244 +6,338 @@ export interface ReceiptData {
   businessName: string;
   businessPhone: string;
   businessAddress: string;
+  businessTaxId?: string;
+  businessCR?: string;
+  branchName?: string;
+  
   invoiceNumber: string;
   invoiceDate: string;
+  invoiceTime?: string;
+  invoiceStatus?: string;
+  
   customerName: string;
-  items: { name: string; qty: number; unitPrice: number; total: number; discount?: number }[];
+  customerPhone?: string;
+  customerTaxId?: string;
+  customerAddress?: string;
+  customerCode?: string;
+  salesRep?: string;
+  
+  items: {
+    name: string;
+    sku?: string;
+    unit?: string;
+    qty: number;
+    unitPrice: number;
+    discountPercent?: number;
+    discount?: number;
+    tax?: number;
+    totalBeforeTax?: number;
+    total: number;
+  }[];
+  
   subtotal: number;
   discountAmount?: number;
   taxAmount?: number;
+  shippingCost?: number;
   grandTotal: number;
+  baseGrandTotal?: number;
+  baseCurrency?: string;
+  
+  paidAmount?: number;
+  remainingAmount?: number;
+  paymentStatus?: string;
+  
   currency: string;
   paymentMethod: string;
+  transactionNo?: string;
+  bankName?: string;
+  dueDate?: string;
+  
   notes?: string;
+  termsAndConditions?: string;
+  returnPolicy?: string;
+  
+  printedBy?: string;
   isRTL: boolean;
   appName: string;
+  autoPrint?: boolean;
+  
+  // Overrides for non-sales documents
+  documentTitle?: string;
+  entityLabel?: string;
+  entityInfoTitle?: string;
 }
 
 export function generateReceiptHTML(data: ReceiptData): string {
-  const { isRTL } = data;
+  const { isRTL, currency } = data;
   const dir = isRTL ? "rtl" : "ltr";
   const alignEnd = isRTL ? "left" : "right";
   const alignStart = isRTL ? "right" : "left";
 
-  const itemRows = data.items.map((item, i) => `
-    <tr style="background: ${i % 2 === 0 ? "#FAFAFA" : "#FFFFFF"};">
-      <td style="padding: 10px 12px; font-size: 13px; color: #111; border-bottom: 1px solid #EEE;">${item.name}</td>
-      <td style="padding: 10px 12px; font-size: 13px; color: #111; border-bottom: 1px solid #EEE; text-align: center;">${item.qty}</td>
-      <td style="padding: 10px 12px; font-size: 13px; color: #444; border-bottom: 1px solid #EEE; text-align: center;">${item.unitPrice.toLocaleString()}</td>
-      <td style="padding: 10px 12px; font-size: 13px; font-weight: 700; color: #111; border-bottom: 1px solid #EEE; text-align: ${alignEnd};">${item.total.toLocaleString()}</td>
-    </tr>
-  `).join("");
+  const fallbackDate = new Date().toLocaleDateString(isRTL ? 'ar-YE' : 'en-US');
+  const fallbackTime = new Date().toLocaleTimeString(isRTL ? 'ar-YE' : 'en-US');
 
-  const totalsRows = [
-    { label: isRTL ? "المجموع الفرعي" : "Subtotal", value: data.subtotal, color: "#444" },
-    ...(data.discountAmount && data.discountAmount > 0 ? [{ label: isRTL ? "الخصم" : "Discount", value: -data.discountAmount, color: "#16A34A" }] : []),
-    ...(data.taxAmount && data.taxAmount > 0 ? [{ label: isRTL ? "الضريبة" : "Tax", value: data.taxAmount, color: "#444" }] : []),
-  ].map(row => `
-    <tr>
-      <td colspan="3" style="padding: 6px 12px; font-size: 13px; color: ${row.color}; text-align: ${alignEnd};">${row.label}</td>
-      <td style="padding: 6px 12px; font-size: 13px; font-weight: 600; color: ${row.color}; text-align: ${alignEnd};">${row.value > 0 ? row.value.toLocaleString() : `-${Math.abs(row.value).toLocaleString()}`}</td>
-    </tr>
-  `).join("");
+  // Build Items Rows
+  const itemRows = data.items.map((item, index) => {
+    const sku = item.sku ? item.sku : "---";
+    const unit = item.unit ? item.unit : "---";
+    const discount = item.discount ? item.discount.toLocaleString() : "0";
+    const tax = item.tax ? item.tax.toLocaleString() : "0";
+    const totalBefore = item.totalBeforeTax ? item.totalBeforeTax.toLocaleString() : (item.qty * item.unitPrice).toLocaleString();
+    
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td class="text-start" style="font-weight:700;">${item.name}</td>
+        <td>${sku}</td>
+        <td>${unit}</td>
+        <td style="font-weight:700;">${item.qty}</td>
+        <td>${item.unitPrice.toLocaleString()}</td>
+        <td>${discount}</td>
+        <td>${tax}</td>
+        <td>${totalBefore}</td>
+        <td class="text-end" style="font-weight:800; color:#1E3A8A;">${item.total.toLocaleString()}</td>
+      </tr>
+    `;
+  }).join("");
+
+  const totalQty = data.items.reduce((sum, item) => sum + item.qty, 0);
 
   return `<!DOCTYPE html>
 <html dir="${dir}" lang="${isRTL ? "ar" : "en"}">
 <head>
   <meta charset="UTF-8" />
-  <title>${isRTL ? "فاتورة" : "Invoice"} - ${data.invoiceNumber}</title>
+  <title>${data.documentTitle || (isRTL ? "فاتورة مبيعات ضريبية" : "Tax Sales Invoice")} - ${data.invoiceNumber}</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+    
     @page {
-      size: A5;
-      margin: 15mm;
+      size: A4;
+      margin: 10mm;
     }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      font-family: 'Cairo', sans-serif;
       direction: ${dir};
-      color: #111;
+      color: #0F172A;
       background: #fff;
-      font-size: 14px;
+      font-size: 11px;
       line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-
+    
+    /* Hide scrollbar for iframe but allow scrolling */
+    html, body { -ms-overflow-style: none; scrollbar-width: none; }
+    ::-webkit-scrollbar { display: none; }
+    
+    .invoice-container { max-width: 100%; margin: 0 auto; padding: 24px; }
+    
     /* ── Header ── */
-    .inv-header {
-      background: linear-gradient(135deg, #1E3A8A, #2563EB);
-      color: white;
-      padding: 28px 24px 24px;
-      text-align: center;
-      border-radius: 8px 8px 0 0;
+    .header-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr 1fr; 
+      border-bottom: 2px solid #1E3A8A; 
+      padding-bottom: 12px; 
+      margin-bottom: 16px; 
     }
-    .inv-header h1 { font-size: 26px; font-weight: 900; margin-bottom: 6px; letter-spacing: -0.5px; }
-    .inv-header p  { font-size: 12px; opacity: 0.85; }
-
-    /* ── Meta row ── */
-    .inv-meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-top: 3px solid #2563EB;
-      padding: 16px 20px;
-    }
-    .inv-meta-block { display: flex; flex-direction: column; gap: 4px; }
-    .inv-meta-label { font-size: 11px; color: #64748B; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
-    .inv-meta-value { font-size: 13px; color: #111; font-weight: 700; }
+    .company-details { text-align: ${alignStart}; }
+    .company-name { font-size: 18px; font-weight: 900; color: #1E3A8A; margin-bottom: 4px; }
+    .company-info-line { font-size: 11px; color: #475569; margin-bottom: 2px; }
+    
+    .invoice-title-container { text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .invoice-title { font-size: 20px; font-weight: 900; color: #1E3A8A; letter-spacing: -0.5px; border: 2px solid #1E3A8A; padding: 4px 16px; border-radius: 6px; display: inline-block; }
+    .invoice-status { margin-top: 6px; font-size: 12px; font-weight: 800; color: #16A34A; background: #DCFCE7; padding: 2px 12px; border-radius: 12px; }
+    
+    .invoice-meta { text-align: ${alignEnd}; }
+    .meta-table { width: 100%; border-collapse: collapse; }
+    .meta-table td { padding: 3px 0; font-size: 11px; }
+    .meta-label { font-weight: 700; color: #64748B; width: 45%; text-align: ${alignStart}; }
+    .meta-value { font-weight: 800; color: #0F172A; text-align: ${alignEnd}; }
+    
+    /* ── Section Titles ── */
+    .section-title { font-size: 13px; font-weight: 900; color: #1E3A8A; border-bottom: 1px solid #CBD5E1; padding-bottom: 4px; margin-bottom: 8px; margin-top: 16px; text-transform: uppercase; }
+    
+    /* ── Info Grids ── */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .info-box { border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px; background: #F8FAFC; }
+    .info-row { display: flex; margin-bottom: 4px; }
+    .info-row:last-child { margin-bottom: 0; }
+    .info-lbl { width: 35%; font-weight: 700; color: #64748B; font-size: 10px; }
+    .info-val { width: 65%; font-weight: 700; color: #0F172A; font-size: 11px; }
 
     /* ── Table ── */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 0;
-    }
-    .table-wrapper {
-      border: 1px solid #E2E8F0;
-      border-radius: 0 0 0 0;
-      overflow: hidden;
-      margin-top: 0;
-    }
-    thead tr {
-      background: #1E3A8A;
-    }
-    thead th {
-      padding: 11px 12px;
-      font-size: 12px;
-      font-weight: 700;
-      color: white;
-      text-align: ${alignStart};
-      letter-spacing: 0.3px;
-    }
-    thead th.center { text-align: center; }
-    thead th.end    { text-align: ${alignEnd}; }
-
-    /* ── Totals ── */
-    .totals-section {
-      border: 1px solid #E2E8F0;
-      border-top: none;
-      background: #FAFAFA;
-    }
-    .grand-total-row td {
-      padding: 14px 12px;
-      background: #1E3A8A;
-      color: white;
-      font-size: 16px;
-      font-weight: 900;
-    }
-
+    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #CBD5E1; }
+    .items-table th { background: #1E3A8A; color: white; font-weight: 700; padding: 8px 6px; font-size: 10px; border: 1px solid #CBD5E1; text-align: center; }
+    .items-table td { padding: 8px 6px; font-size: 11px; border: 1px solid #E2E8F0; text-align: center; }
+    .items-table tbody tr:nth-child(even) { background: #F8FAFC; }
+    .items-table .text-start { text-align: ${alignStart}; }
+    .items-table .text-end { text-align: ${alignEnd}; }
+    
+    /* ── Summary & Notes ── */
+    .summary-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; page-break-inside: avoid; }
+    .notes-box { font-size: 10px; color: #475569; border: 1px solid #E2E8F0; padding: 10px; border-radius: 6px; background: #F8FAFC; }
+    .notes-box strong { color: #1E3A8A; display: block; margin-bottom: 4px; font-size: 11px; }
+    
+    .totals-table { width: 100%; border-collapse: collapse; border: 1px solid #E2E8F0; border-radius: 6px; overflow: hidden; }
+    .totals-table td { padding: 6px 12px; border-bottom: 1px solid #E2E8F0; font-size: 11px; }
+    .totals-lbl { font-weight: 700; color: #475569; text-align: ${alignStart}; background: #F8FAFC; width: 55%; }
+    .totals-val { font-weight: 800; color: #0F172A; text-align: ${alignEnd}; }
+    
+    .grand-total-row td { background: #1E3A8A !important; color: white !important; font-size: 14px !important; font-weight: 900 !important; }
+    
+    /* ── Signatures ── */
+    .signatures-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 32px; margin-bottom: 24px; page-break-inside: avoid; }
+    .sig-box { text-align: center; }
+    .sig-line { border-bottom: 1px dashed #94A3B8; margin-top: 30px; margin-bottom: 8px; height: 1px; width: 80%; margin-left: auto; margin-right: auto; }
+    .sig-title { font-weight: 700; font-size: 11px; color: #475569; }
+    
     /* ── Footer ── */
-    .inv-footer {
-      margin-top: 20px;
-      border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .inv-footer-inner {
-      padding: 16px 20px;
-      background: #F8FAFC;
-    }
-    .inv-footer-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      padding: 4px 0;
-      color: #334155;
-    }
-    .inv-footer-row span:last-child { font-weight: 700; }
-    .inv-thank {
-      background: #1E3A8A;
-      color: white;
-      text-align: center;
-      padding: 14px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .inv-app-note {
-      text-align: center;
-      font-size: 11px;
-      color: #94A3B8;
-      padding: 10px;
-      background: #F8FAFC;
-    }
+    .footer { border-top: 1px solid #E2E8F0; padding-top: 8px; display: flex; justify-content: space-between; font-size: 9px; color: #94A3B8; }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="inv-header">
-    <h1>${data.businessName}</h1>
-    <p>${data.businessPhone} &nbsp;|&nbsp; ${data.businessAddress}</p>
-  </div>
+  <div class="invoice-container">
+    
+    <!-- Header -->
+    <div class="header-grid">
+      <div class="company-details">
+        <div class="company-name">${data.businessName}</div>
+        ${data.businessPhone ? `<div class="company-info-line">هاتف: ${data.businessPhone}</div>` : ''}
+        ${data.businessAddress ? `<div class="company-info-line">العنوان: ${data.businessAddress}</div>` : ''}
+        ${data.businessTaxId ? `<div class="company-info-line">الرقم الضريبي: ${data.businessTaxId}</div>` : ''}
+        ${data.businessCR ? `<div class="company-info-line">السجل التجاري: ${data.businessCR}</div>` : ''}
+      </div>
+      
+      <div class="invoice-title-container">
+        <div class="invoice-title">${data.documentTitle || (isRTL ? "فاتورة مبيعات" : "SALES INVOICE")}</div>
+        <div class="invoice-status" style="background: ${data.paymentStatus === 'Unpaid' ? '#FEE2E2' : '#DCFCE7'}; color: ${data.paymentStatus === 'Unpaid' ? '#DC2626' : '#16A34A'};">
+          ${data.paymentStatus === 'Paid' ? (isRTL ? 'مدفوعة' : 'Paid') : (data.paymentStatus === 'Unpaid' ? (isRTL ? 'غير مدفوعة / آجلة' : 'Unpaid') : (isRTL ? 'مدفوعة جزئياً' : 'Partial'))}
+        </div>
+      </div>
+      
+      <div class="invoice-meta">
+        <table class="meta-table">
+          <tr><td class="meta-label">${isRTL ? "رقم الفاتورة:" : "Invoice No:"}</td><td class="meta-value">${data.invoiceNumber}</td></tr>
+          <tr><td class="meta-label">${isRTL ? "تاريخ الإصدار:" : "Date:"}</td><td class="meta-value">${data.invoiceDate || fallbackDate}</td></tr>
+          <tr><td class="meta-label">${isRTL ? "وقت الإصدار:" : "Time:"}</td><td class="meta-value">${data.invoiceTime || fallbackTime}</td></tr>
+          ${data.branchName ? `<tr><td class="meta-label">${isRTL ? "الفرع:" : "Branch:"}</td><td class="meta-value">${data.branchName}</td></tr>` : ''}
+        </table>
+      </div>
+    </div>
 
-  <!-- Meta Info -->
-  <div class="inv-meta">
-    <div class="inv-meta-block">
-      <span class="inv-meta-label">${isRTL ? "رقم الفاتورة" : "Invoice No."}</span>
-      <span class="inv-meta-value" style="direction:ltr; unicode-bidi:isolate;">${data.invoiceNumber}</span>
+    <!-- Customer/Supplier & Payment Info -->
+    <div class="section-title">${data.entityInfoTitle || (isRTL ? "معلومات الفاتورة والعميل" : "Invoice & Customer Information")}</div>
+    <div class="info-grid">
+      <!-- Entity Info -->
+      <div class="info-box">
+        <div class="info-row"><div class="info-lbl">${data.entityLabel || (isRTL ? "اسم العميل:" : "Customer Name:")}</div><div class="info-val">${data.customerName}</div></div>
+        ${data.customerCode ? `<div class="info-row"><div class="info-lbl">${isRTL ? "رقم الحساب:" : "Account No:"}</div><div class="info-val">${data.customerCode}</div></div>` : ''}
+        ${data.customerPhone ? `<div class="info-row"><div class="info-lbl">${isRTL ? "رقم الهاتف:" : "Phone:"}</div><div class="info-val">${data.customerPhone}</div></div>` : ''}
+        ${data.customerTaxId ? `<div class="info-row"><div class="info-lbl">${isRTL ? "الرقم الضريبي:" : "Tax ID:"}</div><div class="info-val">${data.customerTaxId}</div></div>` : ''}
+        ${data.customerAddress ? `<div class="info-row"><div class="info-lbl">${isRTL ? "العنوان:" : "Address:"}</div><div class="info-val">${data.customerAddress}</div></div>` : ''}
+      </div>
+      
+      <!-- Payment Info -->
+      <div class="info-box">
+        <div class="info-row"><div class="info-lbl">${isRTL ? "طريقة الدفع:" : "Payment Method:"}</div><div class="info-val">${data.paymentMethod}</div></div>
+        ${data.bankName ? `<div class="info-row"><div class="info-lbl">${isRTL ? "البنك/الصندوق:" : "Bank/Cash:"}</div><div class="info-val">${data.bankName}</div></div>` : ''}
+        ${data.transactionNo ? `<div class="info-row"><div class="info-lbl">${isRTL ? "رقم المرجع:" : "Ref No:"}</div><div class="info-val">${data.transactionNo}</div></div>` : ''}
+        ${data.dueDate ? `<div class="info-row"><div class="info-lbl">${isRTL ? "تاريخ الاستحقاق:" : "Due Date:"}</div><div class="info-val">${data.dueDate}</div></div>` : ''}
+        ${data.salesRep ? `<div class="info-row"><div class="info-lbl">${isRTL ? "البائع/المندوب:" : "Sales Rep:"}</div><div class="info-val">${data.salesRep}</div></div>` : ''}
+      </div>
     </div>
-    <div class="inv-meta-block" style="text-align:center;">
-      <span class="inv-meta-label">${isRTL ? "التاريخ والوقت" : "Date & Time"}</span>
-      <span class="inv-meta-value">${data.invoiceDate}</span>
-    </div>
-    <div class="inv-meta-block" style="text-align:${alignEnd};">
-      <span class="inv-meta-label">${isRTL ? "العميل" : "Customer"}</span>
-      <span class="inv-meta-value">${data.customerName}</span>
-    </div>
-  </div>
 
-  <!-- Items Table -->
-  <div class="table-wrapper">
-    <table>
+    <!-- Items Table -->
+    <table class="items-table">
       <thead>
         <tr>
-          <th>${isRTL ? "المنتج" : "Product"}</th>
-          <th class="center">${isRTL ? "الكمية" : "Qty"}</th>
-          <th class="center">${isRTL ? "السعر" : "Price"}</th>
-          <th class="end">${isRTL ? "الإجمالي" : "Total"}</th>
+          <th style="width: 5%;">${isRTL ? "رقم" : "#"}</th>
+          <th class="text-start" style="width: 25%;">${isRTL ? "وصف المنتج" : "Description"}</th>
+          <th style="width: 10%;">${isRTL ? "الباركود/SKU" : "SKU"}</th>
+          <th style="width: 8%;">${isRTL ? "الوحدة" : "Unit"}</th>
+          <th style="width: 8%;">${isRTL ? "الكمية" : "Qty"}</th>
+          <th style="width: 10%;">${isRTL ? "سعر الوحدة" : "Unit Price"}</th>
+          <th style="width: 8%;">${isRTL ? "الخصم" : "Discount"}</th>
+          <th style="width: 8%;">${isRTL ? "الضريبة" : "Tax"}</th>
+          <th style="width: 10%;">${isRTL ? "الإجمالي" : "Total"}</th>
+          <th class="text-end" style="width: 12%;">${isRTL ? "الصافي" : "Net"}</th>
         </tr>
       </thead>
       <tbody>
         ${itemRows}
       </tbody>
     </table>
-  </div>
 
-  <!-- Totals -->
-  <div class="totals-section">
-    <table>
-      ${totalsRows}
-      <tr class="grand-total-row">
-        <td colspan="3" style="text-align:${alignEnd}; letter-spacing: 0.3px;">
-          ${isRTL ? "الإجمالي النهائي" : "Grand Total"}
-        </td>
-        <td style="text-align:${alignEnd}; font-size:18px;">
-          ${data.grandTotal.toLocaleString()} ${data.currency}
-        </td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- Footer -->
-  <div class="inv-footer">
-    <div class="inv-footer-inner">
-      <div class="inv-footer-row">
-        <span>${isRTL ? "طريقة الدفع" : "Payment Method"}</span>
-        <span>${data.paymentMethod}</span>
+    <!-- Summary & Notes -->
+    <div class="summary-grid">
+      <div class="notes-box">
+        <strong>${isRTL ? "ملاحظات الفاتورة والشروط:" : "Notes & Terms:"}</strong>
+        <p style="margin-bottom: 8px;">${data.notes || (isRTL ? "لا توجد ملاحظات إضافية." : "No additional notes.")}</p>
+        
+        ${data.returnPolicy ? `
+          <strong>${isRTL ? "سياسة الاسترجاع والاستبدال:" : "Return Policy:"}</strong>
+          <p>${data.returnPolicy}</p>
+        ` : ''}
       </div>
-      ${data.notes ? `<div class="inv-footer-row" style="margin-top:6px; font-style:italic; color:#64748B;">
-        <span>${isRTL ? "ملاحظات" : "Notes"}</span>
-        <span>${data.notes}</span>
-      </div>` : ""}
+      
+      <div>
+        <table class="totals-table">
+          <tr><td class="totals-lbl">${isRTL ? "إجمالي المنتجات:" : "Total Items:"}</td><td class="totals-val">${data.items.length} (${totalQty} ${isRTL ? "وحدة" : "Units"})</td></tr>
+          <tr><td class="totals-lbl">${isRTL ? "المجموع الفرعي:" : "Subtotal:"}</td><td class="totals-val">${(data.subtotal || 0).toLocaleString()} ${currency}</td></tr>
+          ${data.discountAmount ? `<tr><td class="totals-lbl">${isRTL ? "إجمالي الخصومات:" : "Total Discount:"}</td><td class="totals-val" style="color: #DC2626;">-${(data.discountAmount || 0).toLocaleString()} ${currency}</td></tr>` : ''}
+          ${data.taxAmount ? `<tr><td class="totals-lbl">${isRTL ? "إجمالي الضرائب:" : "Total Tax:"}</td><td class="totals-val">${(data.taxAmount || 0).toLocaleString()} ${currency}</td></tr>` : ''}
+          ${data.shippingCost ? `<tr><td class="totals-lbl">${isRTL ? "تكلفة الشحن:" : "Shipping:"}</td><td class="totals-val">${(data.shippingCost || 0).toLocaleString()} ${currency}</td></tr>` : ''}
+          <tr class="grand-total-row">
+            <td class="totals-lbl" style="background: transparent; color: white;">${isRTL ? "الإجمالي النهائي:" : "Grand Total:"}</td>
+            <td class="totals-val" style="color: white;">
+              ${data.grandTotal.toLocaleString()} ${currency}
+              ${data.baseGrandTotal && data.baseGrandTotal !== data.grandTotal ? `<div style="font-size: 11px; color: #cbd5e1; margin-top: 4px; font-weight: normal;">${isRTL ? `المعادل: ${data.baseGrandTotal.toLocaleString()} ${data.baseCurrency} (سعر الصرف: ${data.grandTotal > 0 ? (data.baseGrandTotal / data.grandTotal).toLocaleString() : 1})` : `Eqv: ${data.baseGrandTotal.toLocaleString()} ${data.baseCurrency} (Rate: ${data.grandTotal > 0 ? (data.baseGrandTotal / data.grandTotal).toLocaleString() : 1})`}</div>` : ""}
+            </td>
+          </tr>
+          
+          ${data.paidAmount !== undefined ? `<tr><td class="totals-lbl">${isRTL ? "المبلغ المدفوع:" : "Amount Paid:"}</td><td class="totals-val" style="color: #16A34A;">${data.paidAmount.toLocaleString()} ${currency}</td></tr>` : ''}
+          ${data.remainingAmount !== undefined && data.remainingAmount > 0 ? `<tr><td class="totals-lbl">${isRTL ? "المبلغ المتبقي:" : "Remaining Balance:"}</td><td class="totals-val" style="color: #DC2626;">${data.remainingAmount.toLocaleString()} ${currency}</td></tr>` : ''}
+        </table>
+      </div>
     </div>
-    <div class="inv-thank">
-      ${isRTL ? "شكرًا لتعاملكم معنا — نتمنى لكم يومًا سعيدًا" : "Thank You For Your Business — Have a Great Day!"}
-    </div>
-    <div class="inv-app-note">
-      ${isRTL ? "تم الإصدار بواسطة نظام" : "Issued via"} <strong>${data.appName}</strong>
-    </div>
-  </div>
 
-  <script>window.onload = () => { window.print(); window.close(); }</script>
+    <!-- Signatures -->
+    <div class="signatures-grid">
+      <div class="sig-box">
+        <div class="sig-title">${isRTL ? "توقيع البائع/المندوب" : "Seller Signature"}</div>
+        <div class="sig-line"></div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-title">${isRTL ? "توقيع المستلم/العميل" : "Receiver Signature"}</div>
+        <div class="sig-line"></div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-title">${isRTL ? "اعتماد الإدارة" : "Management Approval"}</div>
+        <div class="sig-line"></div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-title">${isRTL ? "ختم الشركة" : "Company Seal"}</div>
+        <div class="sig-line"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div>${isRTL ? "تاريخ ووقت الطباعة:" : "Printed On:"} ${fallbackDate} ${fallbackTime}</div>
+      <div>${isRTL ? "طبع بواسطة:" : "Printed By:"} ${data.printedBy || (isRTL ? 'مستخدم النظام' : 'System User')}</div>
+      <div>${isRTL ? "نسخة أصلية" : "Original Document"}</div>
+      <div>${isRTL ? "تم الإصدار إلكترونياً بواسطة" : "Electronically Generated by"} <strong>${data.appName}</strong></div>
+    </div>
+
+  </div>
+  ${data.autoPrint ? `
+  <script>
+    window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 300); }
+  </script>
+  ` : ''}
 </body>
 </html>`;
 }
@@ -263,9 +357,9 @@ export function buildReceiptMessage(data: ReceiptData): string {
     return [
       `*${data.businessName}*`,
       sep,
-      `*${isRTL ? "فاتورة مبيعات رقم:" : "Invoice:"} ${data.invoiceNumber}*`,
+      `*${data.documentTitle || (isRTL ? "فاتورة مبيعات رقم:" : "Invoice:")} ${data.invoiceNumber}*`,
       `${isRTL ? "التاريخ:" : "Date:"}     ${data.invoiceDate}`,
-      `${isRTL ? "العميل:" : "Customer:"} ${data.customerName}`,
+      `${data.entityLabel || (isRTL ? "العميل:" : "Customer:")} ${data.customerName}`,
       sep,
       `*${isRTL ? "تفاصيل المنتجات:" : "Items:"}*`,
       itemLines,
@@ -284,9 +378,9 @@ export function buildReceiptMessage(data: ReceiptData): string {
     return [
       `*${data.businessName}*`,
       sep,
-      `*Invoice: ${data.invoiceNumber}*`,
+      `*${data.documentTitle || 'Invoice:'} ${data.invoiceNumber}*`,
       `Date:     ${data.invoiceDate}`,
-      `Customer: ${data.customerName}`,
+      `${data.entityLabel || 'Customer:'} ${data.customerName}`,
       sep,
       `*Items:*`,
       itemLines,

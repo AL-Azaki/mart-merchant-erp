@@ -5,6 +5,7 @@ import { useApp } from "@/providers/AppProvider";
 import { MOCK_ASSETS, FixedAsset } from "@/core/data/inventoryExtraMockData";
 import { FixedAssetFormSheet } from "../components/FixedAssetFormSheet";
 import { ConfirmDeleteModal } from "@/shared/components/ConfirmDeleteModal";
+import { FixedAssetDetailScreen } from "../components/FixedAssetDetailScreen";
 
 export function FixedAssetListScreen() {
   const { isRTL, isDark, ds } = useApp();
@@ -14,6 +15,7 @@ export function FixedAssetListScreen() {
   const [showForm, setShowForm] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FixedAsset | null>(null);
   const [assetToDelete, setAssetToDelete] = useState<FixedAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null);
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
@@ -57,6 +59,8 @@ export function FixedAssetListScreen() {
       setAssetToDelete(null);
     }
   };
+
+
 
   return (
     <div style={{ height: "100%", display: "flex", flexDirection: "column", background: bg, padding: "24px" }}>
@@ -117,58 +121,95 @@ export function FixedAssetListScreen() {
       </div>
 
       {/* Assets Grid List */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, paddingBottom: 24 }}>
-          {filteredAssets.map(asset => {
-            const isExcellent = asset.status === "excellent";
-            const isMaintenance = asset.status === "needs_maintenance";
-            const color = isExcellent ? "#10B981" : isMaintenance ? "#F59E0B" : "#EF4444";
-            const bg = isExcellent ? "rgba(16,185,129,0.1)" : isMaintenance ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)";
-            const statusLabel = isExcellent ? (isRTL ? "ممتاز" : "Excellent") : isMaintenance ? (isRTL ? "صيانة" : "Maintenance") : (isRTL ? "تالف" : "Broken");
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 24px 24px 24px" }}>
+        <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: isRTL ? "right" : "left" }}>
+            <thead>
+              <tr style={{ background: isDark ? ds.surface2 : "#F8FAFC", borderBottom: `1px solid ${border}` }}>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, width: "30%" }}>{isRTL ? "الأصل الثابت" : "Fixed Asset"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>{isRTL ? "التصنيف / الموقع" : "Category / Location"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>{isRTL ? "تاريخ الشراء" : "Purchase Date"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>{isRTL ? "التكلفة" : "Cost"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>{isRTL ? "الحالة" : "Status"}</th>
+                <th style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 700, textAlign: "center" }}>{isRTL ? "الإجراءات" : "Actions"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {filteredAssets.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: 40, textAlign: "center", color: ds.textMuted, fontSize: 14 }}>
+                      {isRTL ? "لا توجد أصول مطابقة للبحث" : "No assets found matching your search"}
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAssets.map((asset, i) => {
+                    const isExcellent = asset.status === "excellent";
+                    const isMaintenance = asset.status === "needs_maintenance";
+                    const badgeColor = isExcellent ? "#10B981" : isMaintenance ? "#F59E0B" : "#EF4444";
+                    const badgeBg = isExcellent ? "rgba(16,185,129,0.1)" : isMaintenance ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)";
+                    const statusLabel = isExcellent ? (isRTL ? "ممتاز" : "Excellent") : isMaintenance ? (isRTL ? "صيانة" : "Maintenance") : (isRTL ? "تالف" : "Broken");
 
-            return (
-              <motion.div key={asset.id} layout
-                style={{ background: surface, border: `1px solid ${border}`, borderRadius: 20, padding: 20, position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.01)" }}>
-                {/* Status Badge */}
-                <span style={{ position: "absolute", top: 16, [isRTL ? "left" : "right"]: 16, fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 8, background: bg, color }}>
-                  {statusLabel}
-                </span>
+                    return (
+                      <motion.tr key={asset.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ delay: i * 0.03 }}
+                        onClick={() => setSelectedAsset(asset)}
+                        style={{ borderBottom: i === filteredAssets.length - 1 ? "none" : `1px solid ${isDark ? ds.border : "#F1F5F9"}`, cursor: "pointer", transition: "background 0.2s" }}
+                        onMouseOver={e => e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.02)" : "#F8FAFC"}
+                        onMouseOut={e => e.currentTarget.style.background = "transparent"}
+                      >
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <div style={{ width: 44, height: 44, borderRadius: 12, background: isDark ? ds.surface2 : "#F1F5F9", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Cpu size={20} color={ds.textPrimary} />
+                            </div>
+                            <div>
+                              <h3 style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 700, margin: "0 0 4px 0" }}>{asset.name}</h3>
+                              <div style={{ color: ds.textSecondary, fontSize: 12, fontWeight: 600, textTransform: "uppercase" }}>{asset.code}</div>
+                            </div>
+                          </div>
+                        </td>
 
-                <h4 style={{ color: ds.textPrimary, fontSize: 16, fontWeight: 800, margin: "0 0 4px 0", maxWidth: "70%" }}>{asset.name}</h4>
-                <div style={{ color: ds.textSecondary, fontSize: 11, fontWeight: 600, textTransform: "uppercase", marginBottom: 16 }}>{asset.code}</div>
+                        <td style={{ padding: "16px 20px", color: ds.textPrimary, fontSize: 14, fontWeight: 600 }}>
+                          <div style={{ marginBottom: 4 }}>{asset.category}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 4, color: ds.textSecondary, fontSize: 12 }}>
+                            <MapPin size={12} /> {asset.location}
+                          </div>
+                        </td>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: `1px solid ${border}`, paddingTop: 14, marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: ds.textSecondary, fontSize: 13 }}>
-                    <Cpu size={15} color={ds.textMuted} />
-                    <span>{asset.category}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: ds.textSecondary, fontSize: 13 }}>
-                    <MapPin size={15} color={ds.textMuted} />
-                    <span>{asset.location}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: ds.textSecondary, fontSize: 13 }}>
-                    <Calendar size={15} color={ds.textMuted} />
-                    <span>{asset.purchase_date}</span>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, color: ds.textPrimary, fontSize: 14, fontWeight: 700 }}>
-                    <DollarSign size={15} color="#10B981" />
-                    <span>{asset.cost.toLocaleString()} <span style={{ fontSize: 11, color: ds.textSecondary }}>YER</span></span>
-                  </div>
-                </div>
+                        <td style={{ padding: "16px 20px", color: ds.textSecondary, fontSize: 13, fontWeight: 600 }}>
+                          {asset.purchase_date}
+                        </td>
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button onClick={() => { setEditingAsset(asset); setShowForm(true); }}
-                    style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <Edit size={16} color={ds.textPrimary} />
-                  </button>
-                  <button onClick={() => setAssetToDelete(asset)}
-                    style={{ background: "rgba(239, 68, 68, 0.1)", border: "none", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                    <Trash2 size={16} color="#EF4444" />
-                  </button>
-                </div>
-              </motion.div>
-            );
-          })}
+                        <td style={{ padding: "16px 20px", color: ds.textPrimary, fontSize: 15, fontWeight: 800 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <DollarSign size={14} color="#10B981" />
+                            {asset.cost.toLocaleString()}
+                          </div>
+                        </td>
+
+                        <td style={{ padding: "16px 20px" }}>
+                          <span style={{ padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700, background: badgeBg, color: badgeColor }}>
+                            {statusLabel}
+                          </span>
+                        </td>
+
+                        <td style={{ padding: "16px 20px" }}>
+                          <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+                            <button title={isRTL ? "تعديل الأصل" : "Edit Asset"} onClick={(e) => { e.stopPropagation(); setEditingAsset(asset); setShowForm(true); }} style={{ width: 36, height: 36, borderRadius: 10, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseOut={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
+                              <Edit size={16} color={ds.textPrimary} />
+                            </button>
+                            <button title={isRTL ? "حذف الأصل" : "Delete Asset"} onClick={(e) => { e.stopPropagation(); setAssetToDelete(asset); }} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "0.2s" }} onMouseOver={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"} onMouseOut={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}>
+                              <Trash2 size={16} color="#EF4444" />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })
+                )}
+              </AnimatePresence>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -190,6 +231,17 @@ export function FixedAssetListScreen() {
             message={isRTL ? `هل أنت متأكد من حذف الأصل "${assetToDelete.name}"؟` : `Are you sure you want to delete asset "${assetToDelete.name}"?`}
             onConfirm={handleDelete}
             onCancel={() => setAssetToDelete(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedAsset && (
+          <FixedAssetDetailScreen 
+            initialAssetId={selectedAsset.id} 
+            assets={localAssets} 
+            onClose={() => setSelectedAsset(null)} 
+            onEdit={(asset) => { setEditingAsset(asset); setShowForm(true); }}
           />
         )}
       </AnimatePresence>

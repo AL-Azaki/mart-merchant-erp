@@ -20,7 +20,7 @@ type SalesView = "main" | "detail" | "returns";
 export function SalesModule({ initialView = "main", customers = [], products = [] }: SalesModuleProps) {
   const { t, isDark, isRTL, ds } = useApp();
   const [view, setView] = useState<SalesView>(initialView === "new" ? "main" : initialView as SalesView);
-  const [activeTab, setActiveTab] = useState<"new" | "invoices" | "orders">(initialView === "new" ? "new" : "invoices");
+  const [activeTab, setActiveTab] = useState<"new" | "invoices" | "orders">(initialView === "invoices" ? "invoices" : "new");
   const [selectedInvoice, setSelectedInvoice] = useState<SalesInvoiceWithDetails | null>(null);
 
   const bg = isDark ? ds.bg : "#F8FAFC";
@@ -167,11 +167,11 @@ export function SalesModule({ initialView = "main", customers = [], products = [
         {view === "detail" && selectedInvoice && (
           <motion.div
             key="detail"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.22 }}
-            style={{ position: "absolute", inset: 0, zIndex: 10 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{ position: "fixed", inset: 0, zIndex: 9999 }}
           >
             <InvoiceDetailScreen
               invoice={selectedInvoice}

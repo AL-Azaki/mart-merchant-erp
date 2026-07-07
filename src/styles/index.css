@@ -26,3 +26,13 @@
   .print-content { overflow: visible !important; height: auto !important; padding: 0 !important; }
   @page { size: A4; margin: 10mm; }
 }
+
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+  .compact-padding-mobile {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+}

@@ -52,11 +52,11 @@ export function FixedAssetFormSheet({ asset, onSave, onClose }: FixedAssetFormSh
 
   const getInputStyle = () => ({
     width: "100%", 
-    height: 48, 
-    padding: "0 16px",
+    height: 60, 
+    padding: "0 20px",
     background: isDark ? ds.surface2 : "#FFFFFF",
-    border: `1px solid ${border}`, 
-    borderRadius: 12,
+    border: `1.5px solid ${border}`, 
+    borderRadius: 14,
     color: ds.textPrimary, 
     fontSize: 14, 
     fontWeight: 500,
@@ -66,7 +66,7 @@ export function FixedAssetFormSheet({ asset, onSave, onClose }: FixedAssetFormSh
   });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
         style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }} />
       
@@ -153,11 +153,11 @@ export function FixedAssetFormSheet({ asset, onSave, onClose }: FixedAssetFormSh
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
-            <button type="submit" style={{ flex: 1, height: 48, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", borderRadius: 12, color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+          <div style={{ display: "flex", gap: 16, marginTop: 24 }}>
+            <button type="submit" style={{ flex: 1, height: 60, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", borderRadius: 14, color: "white", fontSize: 16, fontWeight: 800, cursor: "pointer" }}>
               {isRTL ? "حفظ" : "Save"}
             </button>
-            <button type="button" onClick={onClose} style={{ flex: 1, height: 48, background: isDark ? ds.surface2 : "#E2E8F0", border: "none", borderRadius: 12, color: ds.textPrimary, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, height: 60, background: isDark ? ds.surface2 : "#E2E8F0", border: "none", borderRadius: 14, color: ds.textPrimary, fontSize: 16, fontWeight: 800, cursor: "pointer" }}>
               {isRTL ? "إلغاء" : "Cancel"}
             </button>
           </div>

@@ -60,10 +60,10 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
   };
 
   const getInputStyle = () => ({
-    width: "100%", height: 48, padding: "0 16px", paddingInlineStart: 44,
+    width: "100%", height: 56, padding: "0 16px", paddingInlineStart: 44,
     background: isDark ? ds.surface2 : "#FFFFFF",
     border: `1px solid ${border}`, borderRadius: 12,
-    color: ds.textPrimary, fontSize: 14, fontWeight: 500,
+    color: ds.textPrimary, fontSize: 16, fontWeight: 700,
     outline: "none", fontFamily: "inherit",
     boxSizing: "border-box" as const
   });
@@ -77,17 +77,17 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
         style={{ position: "relative", width: "100%", maxWidth: 500, maxHeight: "90vh", display: "flex", flexDirection: "column", background: bg, borderRadius: 24, overflow: "hidden", boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }}>
         
         {/* Header */}
-        <div style={{ background: surface, padding: "20px 24px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+        <div style={{ background: surface, padding: "24px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(99, 102, 241, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <UserCircle size={20} color="#6366F1" />
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(99, 102, 241, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <UserCircle size={22} color="#6366F1" />
             </div>
-            <h2 style={{ color: ds.textPrimary, fontSize: 18, fontWeight: 800 }}>
+            <h2 style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 800 }}>
               {user ? (isRTL ? "تعديل المستخدم" : "Edit User") : (isRTL ? "إضافة مستخدم جديد" : "Add New User")}
             </h2>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", cursor: "pointer" }}>
-            <X size={20} color={ds.textPrimary} />
+          <button onClick={onClose} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 44, height: 44, borderRadius: 22, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = isDark ? ds.border : "#E2E8F0"} onMouseLeave={e => e.currentTarget.style.background = isDark ? ds.surface2 : "#F1F5F9"}>
+            <X size={22} color={ds.textPrimary} />
           </button>
         </div>
 
@@ -128,7 +128,7 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
           <div style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
               <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "دور المستخدم (الصلاحيات) *" : "User Role *"}</label>
-              <select name="role_id" value={formData.role_id} onChange={handleChange} style={{ width: "100%", height: 48, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
+              <select name="role_id" value={formData.role_id} onChange={handleChange} style={{ width: "100%", height: 56, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 16, fontWeight: 700, outline: "none", fontFamily: "inherit" }}>
                 {MOCK_ROLES.map(r => (
                   <option key={r.id} value={r.id}>{r.role_name}</option>
                 ))}
@@ -137,7 +137,7 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
             
             <div>
               <label style={{ display: "block", color: ds.textSecondary, fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{isRTL ? "الفرع المتاح *" : "Assigned Branch *"}</label>
-              <select name="default_branch_id" value={formData.default_branch_id} onChange={handleChange} style={{ width: "100%", height: 48, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 600, outline: "none", fontFamily: "inherit" }}>
+              <select name="default_branch_id" value={formData.default_branch_id} onChange={handleChange} style={{ width: "100%", height: 56, padding: "0 16px", background: isDark ? ds.surface2 : "#FFFFFF", border: `1px solid ${border}`, borderRadius: 12, color: ds.textPrimary, fontSize: 16, fontWeight: 700, outline: "none", fontFamily: "inherit" }}>
                 {MOCK_BRANCHES.map(b => (
                   <option key={b.id} value={b.id}>{b.branch_name}</option>
                 ))}
@@ -152,12 +152,12 @@ export function UserFormSheet({ user, onClose, onSave }: UserFormSheetProps) {
             </label>
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <button type="button" onClick={onClose} style={{ flex: 1, height: 48, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 12, color: ds.textSecondary, fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+          <div style={{ display: "flex", gap: 16 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, height: 60, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 14, color: ds.textSecondary, fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
               {isRTL ? "إلغاء" : "Cancel"}
             </button>
-            <button type="submit" style={{ flex: 1, height: 48, background: "#6366F1", border: "none", borderRadius: 12, color: "white", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <Check size={18} strokeWidth={2.5} /> {isRTL ? "حفظ" : "Save"}
+            <button type="submit" style={{ flex: 2, height: 60, background: "linear-gradient(135deg, #6366F1, #4F46E5)", border: "none", borderRadius: 14, color: "white", fontSize: 16, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 6px 20px rgba(99,102,241,0.3)" }}>
+              <Check size={24} strokeWidth={2.5} /> {isRTL ? "حفظ البيانات" : "Save"}
             </button>
           </div>
         </form>

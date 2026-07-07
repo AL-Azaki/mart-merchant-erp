@@ -6,14 +6,15 @@ import { NewPurchaseScreen } from "./NewPurchaseScreen";
 import { PurchaseReturnsScreen } from "./PurchaseReturnsScreen";
 import { SupplierListScreen } from "./SupplierListScreen";
 import { ShoppingCart, RotateCcw, Building2 } from "lucide-react";
-import { MOCK_PURCHASE_INVOICES, MOCK_SUPPLIERS } from "@/core/data/purchasesMockData";
+import { usePurchaseStore } from "@/core/engine/purchaseStore";
 
 export function PurchasesModule({ products = [] }: { products?: any[] }) {
   const { t, isDark, isRTL, ds } = useApp();
   const [view, setView] = useState<"main" | "new">("main");
   const [activeTab, setActiveTab] = useState<"invoices" | "returns" | "suppliers">("invoices");
-  const [localInvoices, setLocalInvoices] = useState<any[]>(MOCK_PURCHASE_INVOICES);
-  const [localSuppliers, setLocalSuppliers] = useState<any[]>(MOCK_SUPPLIERS);
+  const purchaseStore = usePurchaseStore();
+  const localInvoices = purchaseStore.invoices;
+  const localSuppliers = purchaseStore.suppliers;
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
@@ -26,18 +27,10 @@ export function PurchasesModule({ products = [] }: { products?: any[] }) {
 
   return (
     <div style={{ height: "100%", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", background: bg }}>
-      <AnimatePresence mode="wait">
-        {view === "main" && (
-          <motion.div
-            key="main"
-            initial={{ opacity: 0, x: 0 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: 0.2 }}
-            style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}
-          >
-            {/* Header & Tabs */}
-            <div style={{ background: surface, borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, padding: "16px 24px 0", flexShrink: 0 }}>
+      {/* Main View is always rendered underneath to allow Modals to overlay */}
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+        {/* Header & Tabs */}
+        <div style={{ background: surface, borderBottom: `1px solid ${isDark ? ds.border : "#E2E8F0"}`, padding: "16px 24px 0", flexShrink: 0 }}>
               <h1 style={{ color: ds.textPrimary, fontSize: 24, fontWeight: 800, marginBottom: 16 }}>
                 {isRTL ? "المشتريات والموردين" : "Purchases & Suppliers"}
               </h1>
@@ -86,32 +79,22 @@ export function PurchasesModule({ products = [] }: { products?: any[] }) {
                 >
                   {activeTab === "invoices" && <PurchaseListScreen invoices={localInvoices} suppliers={localSuppliers} onNewPurchase={() => setView("new")} />}
                   {activeTab === "returns" && <PurchaseReturnsScreen />}
-                  {activeTab === "suppliers" && <SupplierListScreen suppliers={localSuppliers} onUpdateSuppliers={setLocalSuppliers} />}
+                  {activeTab === "suppliers" && <SupplierListScreen />}
                 </motion.div>
               </AnimatePresence>
-            </div>
-          </motion.div>
-        )}
+          </div>
+        </div>
+      </div>
 
+      <AnimatePresence>
         {view === "new" && (
-          <motion.div
-            key="new"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.22 }}
-            style={{ position: "absolute", inset: 0, zIndex: 10 }}
-          >
-            <NewPurchaseScreen 
-              suppliers={localSuppliers}
+          <NewPurchaseScreen 
               products={products}
               onBack={() => setView("main")} 
               onSave={(newInvoice) => {
-                setLocalInvoices(prev => [newInvoice, ...prev]);
-                setView("main");
+                // The store is updated inside NewPurchaseScreen, it will handle its own success UI
               }}
-            />
-          </motion.div>
+          />
         )}
       </AnimatePresence>
     </div>

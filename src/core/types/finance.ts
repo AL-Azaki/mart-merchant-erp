@@ -119,6 +119,8 @@ export interface JournalEntry {
   fiscal_period_id: UUID;
   journal_number:   string;
   journal_date:     DateString;
+  currency_id:      UUID;
+  exchange_rate:    number;
   reference_type:   JournalReferenceType;
   reference_id:     UUID;              // polymorphic FK — no DB constraint
   status:           JournalEntryStatus;
@@ -139,6 +141,8 @@ export interface JournalEntryLine {
   line_number:         number;
   debit_amount:        number;
   credit_amount:       number;
+  base_debit_amount:   number;
+  base_credit_amount:  number;
   description:         string | null;
 }
 
@@ -160,6 +164,7 @@ export interface Payment {
   branch_id:           UUID;
   payment_method_id:   UUID;
   currency_id:         UUID;
+  exchange_rate:       number;
   chart_of_account_id: UUID;          // cash/bank account in COA
   payment_number:      string;
   payment_type:        PaymentType;
@@ -167,6 +172,7 @@ export interface Payment {
   reference_id:        UUID;
   reference_number:    string | null; // external reference (e.g. bank receipt)
   amount:              number;
+  base_amount:         number;
   payment_date:        ISODateString;
   status:              PaymentStatus;
   notes:               string | null;
@@ -199,7 +205,10 @@ export interface Expense {
   branch_id:         UUID;
   category_id:       UUID;
   payment_method_id: UUID;
+  currency_id:       UUID;
+  exchange_rate:     number;
   amount:            number;
+  base_amount:       number;
   expense_date:      DateString;
   description:       string | null;
   status:            ExpenseStatus;
@@ -218,8 +227,11 @@ export interface OpeningBalance {
   fiscal_year_id:      UUID;
   chart_of_account_id: UUID;
   currency_id:         UUID;
+  exchange_rate:       number;
   debit_amount:        number;
   credit_amount:       number;
+  base_debit_amount:   number;
+  base_credit_amount:  number;
   created_by:          UUID;
   created_at:          ISODateString;
 }

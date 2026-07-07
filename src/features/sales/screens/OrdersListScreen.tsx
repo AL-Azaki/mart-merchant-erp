@@ -33,12 +33,6 @@ export function OrdersListScreen() {
 
   return (
     <div style={{ padding: 24, height: "100%", display: "flex", flexDirection: "column" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <div>
-          <h2 style={{ color: ds.textPrimary, fontSize: 20, fontWeight: 800, margin: "0 0 4px 0" }}>{isRTL ? "طلبات المتجر الإلكتروني" : "E-commerce Orders"}</h2>
-          <p style={{ color: ds.textSecondary, fontSize: 13, margin: 0 }}>{isRTL ? "إدارة ومعالجة الطلبات الواردة من المتجر والتطبيق" : "Manage and process incoming web and app orders"}</p>
-        </div>
-      </div>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 24 }}>
         <div style={{ flex: 1, position: "relative" }}>

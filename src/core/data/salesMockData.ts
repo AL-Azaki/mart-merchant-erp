@@ -75,10 +75,14 @@ export const MOCK_INVENTORY_TRANSACTIONS: InventoryTransaction[] = [
 
 // ─── Customers ────────────────────────────────────────────────────────────────
 export const MOCK_CUSTOMERS: Customer[] = [
-  { id: "cust_001", business_id: "biz_001", customer_name: "محمد علي سالم",          phone: "+967771112233", email: null,               address: "شارع حده، صنعاء",     credit_limit: 50000,  is_active: true, created_at: "2024-02-01T09:00:00Z", updated_at: "2024-02-01T09:00:00Z", deleted_at: null },
-  { id: "cust_002", business_id: "biz_001", customer_name: "شركة النهضة للتجارة",    phone: "+967775556677", email: "info@alnahda.ye",   address: "شارع الزبيري، صنعاء", credit_limit: 200000, is_active: true, created_at: "2024-02-05T10:00:00Z", updated_at: "2024-06-20T08:00:00Z", deleted_at: null },
-  { id: "cust_003", business_id: "biz_001", customer_name: "فاطمة أحمد محمود",       phone: "+967779998877", email: "fatima@mail.com",   address: null,                   credit_limit: 0,      is_active: true, created_at: "2024-03-10T11:00:00Z", updated_at: "2024-03-10T11:00:00Z", deleted_at: null },
-  { id: "cust_004", business_id: "biz_001", customer_name: "مؤسسة الأمين التجارية", phone: "+967774443322", email: null,               address: "المعلا، عدن",          credit_limit: 500000, is_active: true, created_at: "2024-04-01T09:00:00Z", updated_at: "2024-06-15T10:00:00Z", deleted_at: null },
+  { id: "cust_001", business_id: "biz_001", customer_name: "محمد علي سالم",          phone: "+967771112233", email: null,               address: "شارع حده، صنعاء",     credit_limit: 50000,
+    default_currency_id: "11111111-1111-1111-1111-111111111111",  is_active: true, created_at: "2024-02-01T09:00:00Z", updated_at: "2024-02-01T09:00:00Z", deleted_at: null },
+  { id: "cust_002", business_id: "biz_001", customer_name: "شركة النهضة للتجارة",    phone: "+967775556677", email: "info@alnahda.ye",   address: "شارع الزبيري، صنعاء", credit_limit: 200000,
+    default_currency_id: "11111111-1111-1111-1111-111111111111", is_active: true, created_at: "2024-02-05T10:00:00Z", updated_at: "2024-06-20T08:00:00Z", deleted_at: null },
+  { id: "cust_003", business_id: "biz_001", customer_name: "فاطمة أحمد محمود",       phone: "+967779998877", email: "fatima@mail.com",   address: null,                   credit_limit: 0,
+    default_currency_id: "11111111-1111-1111-1111-111111111111",      is_active: true, created_at: "2024-03-10T11:00:00Z", updated_at: "2024-03-10T11:00:00Z", deleted_at: null },
+  { id: "cust_004", business_id: "biz_001", customer_name: "مؤسسة الأمين التجارية", phone: "+967774443322", email: null,               address: "المعلا، عدن",          credit_limit: 500000,
+    default_currency_id: "11111111-1111-1111-1111-111111111111", is_active: true, created_at: "2024-04-01T09:00:00Z", updated_at: "2024-06-15T10:00:00Z", deleted_at: null },
 ];
 
 // ─── Channels ─────────────────────────────────────────────────────────────────
@@ -94,7 +98,13 @@ export const MOCK_SALES_INVOICES: SalesInvoice[] = [
     id: "si_001", business_id: "biz_001", branch_id: "br_001",
     customer_id: "cust_001", invoice_number: "INV-2024-0001",
     invoice_date: "2024-06-25T10:30:00Z", due_date: null,
+    currency_id: "11111111-1111-1111-1111-111111111111",
+    exchange_rate: 1,
     sub_total: 1700, discount_total: 0, tax_total: 0, grand_total: 1700,
+    base_sub_total: 1700,
+    base_discount_total: 0,
+    base_tax_total: 0,
+    base_grand_total: 1700,
     payment_status: "Paid", status: "Posted",
     notes: null, created_by: "usr_001",
     created_at: "2024-06-25T10:30:00Z", updated_at: "2024-06-25T10:35:00Z", deleted_at: null,
@@ -103,7 +113,13 @@ export const MOCK_SALES_INVOICES: SalesInvoice[] = [
     id: "si_002", business_id: "biz_001", branch_id: "br_001",
     customer_id: "cust_002", invoice_number: "INV-2024-0002",
     invoice_date: "2024-06-25T14:00:00Z", due_date: "2024-07-05T00:00:00Z",
+    currency_id: "11111111-1111-1111-1111-111111111111",
+    exchange_rate: 1,
     sub_total: 24000, discount_total: 2400, tax_total: 3240, grand_total: 24840,
+    base_sub_total: 24840,
+    base_discount_total: 0,
+    base_tax_total: 0,
+    base_grand_total: 24840,
     payment_status: "Partial", status: "Posted",
     notes: "باقي الدفع آخر الشهر", created_by: "usr_001",
     created_at: "2024-06-25T14:00:00Z", updated_at: "2024-06-25T14:05:00Z", deleted_at: null,
@@ -112,7 +128,13 @@ export const MOCK_SALES_INVOICES: SalesInvoice[] = [
     id: "si_003", business_id: "biz_001", branch_id: "br_001",
     customer_id: null, invoice_number: "INV-2024-0003",
     invoice_date: "2024-06-26T09:15:00Z", due_date: null,
+    currency_id: "11111111-1111-1111-1111-111111111111",
+    exchange_rate: 1,
     sub_total: 750, discount_total: 0, tax_total: 0, grand_total: 750,
+    base_sub_total: 750,
+    base_discount_total: 0,
+    base_tax_total: 0,
+    base_grand_total: 750,
     payment_status: "Paid", status: "Posted",
     notes: null, created_by: "usr_001",
     created_at: "2024-06-26T09:15:00Z", updated_at: "2024-06-26T09:16:00Z", deleted_at: null,
@@ -121,7 +143,13 @@ export const MOCK_SALES_INVOICES: SalesInvoice[] = [
     id: "si_004", business_id: "biz_001", branch_id: "br_001",
     customer_id: "cust_004", invoice_number: "INV-2024-0004",
     invoice_date: "2024-06-26T11:00:00Z", due_date: "2024-07-15T00:00:00Z",
+    currency_id: "11111111-1111-1111-1111-111111111111",
+    exchange_rate: 1,
     sub_total: 6600, discount_total: 100, tax_total: 0, grand_total: 6500,
+    base_sub_total: 6500,
+    base_discount_total: 0,
+    base_tax_total: 0,
+    base_grand_total: 6500,
     payment_status: "Unpaid", status: "Draft",
     notes: "في انتظار الموافقة", created_by: "usr_001",
     created_at: "2024-06-26T11:00:00Z", updated_at: "2024-06-26T11:00:00Z", deleted_at: null,
@@ -130,11 +158,16 @@ export const MOCK_SALES_INVOICES: SalesInvoice[] = [
 
 // ─── Sales Invoice Items ───────────────────────────────────────────────────────
 export const MOCK_SALES_INVOICE_ITEMS: SalesInvoiceItem[] = [
-  { id: "sii_001", sales_invoice_id: "si_001", product_unit_id: "pu_001", warehouse_id: "wh_001", quantity: 10, unit_price: 80,    cost_price: 50,   discount: 0,    tax: 0,    line_total: 800,   cost_total: 500 },
-  { id: "sii_002", sales_invoice_id: "si_001", product_unit_id: "pu_003", warehouse_id: "wh_001", quantity: 5,  unit_price: 180,   cost_price: 120,  discount: 0,    tax: 0,    line_total: 900,   cost_total: 600 },
-  { id: "sii_003", sales_invoice_id: "si_002", product_unit_id: "pu_007", warehouse_id: "wh_001", quantity: 2,  unit_price: 12000, cost_price: 8000, discount: 2400, tax: 3240, line_total: 24840, cost_total: 16000 },
-  { id: "sii_004", sales_invoice_id: "si_003", product_unit_id: "pu_004", warehouse_id: "wh_001", quantity: 1,  unit_price: 750,   cost_price: 600,  discount: 0,    tax: 0,    line_total: 750,   cost_total: 600 },
-  { id: "sii_005", sales_invoice_id: "si_004", product_unit_id: "pu_005", warehouse_id: "wh_001", quantity: 3,  unit_price: 2200,  cost_price: 1800, discount: 100,  tax: 0,    line_total: 6500,  cost_total: 5400 },
+  { id: "sii_001", sales_invoice_id: "si_001", product_unit_id: "pu_001", warehouse_id: "wh_001", quantity: 10, unit_price: 80,    cost_price: 50,   discount: 0,    tax: 0,    line_total: 800,
+    base_line_total: 800,   cost_total: 500 },
+  { id: "sii_002", sales_invoice_id: "si_001", product_unit_id: "pu_003", warehouse_id: "wh_001", quantity: 5,  unit_price: 180,   cost_price: 120,  discount: 0,    tax: 0,    line_total: 900,
+    base_line_total: 900,   cost_total: 600 },
+  { id: "sii_003", sales_invoice_id: "si_002", product_unit_id: "pu_007", warehouse_id: "wh_001", quantity: 2,  unit_price: 12000, cost_price: 8000, discount: 2400, tax: 3240, line_total: 24840,
+    base_line_total: 24840, cost_total: 16000 },
+  { id: "sii_004", sales_invoice_id: "si_003", product_unit_id: "pu_004", warehouse_id: "wh_001", quantity: 1,  unit_price: 750,   cost_price: 600,  discount: 0,    tax: 0,    line_total: 750,
+    base_line_total: 750,   cost_total: 600 },
+  { id: "sii_005", sales_invoice_id: "si_004", product_unit_id: "pu_005", warehouse_id: "wh_001", quantity: 3,  unit_price: 2200,  cost_price: 1800, discount: 100,  tax: 0,    line_total: 6500,
+    base_line_total: 6500,  cost_total: 5400 },
 ];
 
 // ─── Sales Returns ────────────────────────────────────────────────────────────
@@ -142,7 +175,10 @@ export const MOCK_SALES_RETURNS: SalesReturn[] = [
   {
     id: "sr_001", business_id: "biz_001", branch_id: "br_001",
     sales_invoice_id: "si_001", return_number: "RTN-2024-001",
-    return_date: "2024-06-27T10:00:00Z", total_amount: 160,
+    return_date: "2024-06-27T10:00:00Z",
+    currency_id: "11111111-1111-1111-1111-111111111111",
+    exchange_rate: 1, total_amount: 160,
+    base_total_amount: 160,
     status: "Posted", notes: "منتج تالف",
     created_by: "usr_001",
     created_at: "2024-06-27T10:00:00Z", updated_at: "2024-06-27T10:00:00Z",
@@ -171,6 +207,7 @@ export function buildCartLine(
     discount,
     tax: (gross - discount) * (taxRate / 100),
     line_total,
+    base_line_total: line_total,
     cost_total,
   };
 }

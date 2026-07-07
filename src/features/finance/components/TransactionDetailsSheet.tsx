@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import { X, Printer, Share2, FileText, Wallet, Calendar, Hash, User, LayoutList } from "lucide-react";
 import { useApp } from "@/providers/AppProvider";
+import { MOCK_CURRENCIES } from "@/core/data/financeMockData";
 
 interface TransactionDetailsSheetProps {
   transaction: any;
@@ -16,6 +17,13 @@ export function TransactionDetailsSheet({ transaction, onClose }: TransactionDet
   const isIncome = transaction.type === "income";
   const primaryColor = isIncome ? "#3B82F6" : "#EF4444";
   const title = isRTL ? (isIncome ? "سند قبض" : "سند صرف") : (isIncome ? "Income Voucher" : "Expense Voucher");
+
+  const curId = transaction.currency_id || MOCK_CURRENCIES.find(c => c.is_base_currency)?.id;
+  const currencyObj = MOCK_CURRENCIES.find(c => c.id === curId);
+  const currency = currencyObj?.currency_symbol || "YER";
+  const baseCurrency = MOCK_CURRENCIES.find(c => c.is_base_currency)?.currency_symbol || "YER";
+  const exchangeRate = transaction.exchange_rate || 1;
+  const baseAmount = transaction.base_amount || transaction.amount;
 
   const getCategoryName = (key: string) => {
     const categories: Record<string, string> = {
@@ -64,8 +72,8 @@ export function TransactionDetailsSheet({ transaction, onClose }: TransactionDet
               <p style={{ color: ds.textSecondary, fontSize: 13 }}>{transaction.id}</p>
             </div>
           </div>
-          <button onClick={onClose} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 40, height: 40, borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}>
-            <X size={20} color={ds.textPrimary} />
+          <button onClick={onClose} style={{ background: isDark ? ds.surface2 : "#F1F5F9", border: "none", width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}>
+            <X size={24} color={ds.textPrimary} />
           </button>
         </div>
 
@@ -74,7 +82,12 @@ export function TransactionDetailsSheet({ transaction, onClose }: TransactionDet
           
           <div style={{ textAlign: "center", marginBottom: 10 }}>
             <div style={{ fontSize: 32, fontWeight: 900, color: primaryColor, marginBottom: 8 }}>
-              {transaction.amount.toLocaleString()} <span style={{ fontSize: 16 }}>{isRTL ? "ر.ي" : "YER"}</span>
+              {transaction.amount.toLocaleString()} <span style={{ fontSize: 16 }}>{currency}</span>
+              {exchangeRate !== 1 && (
+                <div style={{ fontSize: 14, color: ds.textSecondary, marginTop: 4, fontWeight: 600 }}>
+                  {isRTL ? `المعادل: ${baseAmount.toLocaleString()} ${baseCurrency} (سعر الصرف: ${exchangeRate})` : `Eqv: ${baseAmount.toLocaleString()} ${baseCurrency} (Rate: ${exchangeRate})`}
+                </div>
+              )}
             </div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: isDark ? ds.surface2 : "#F8FAFC", padding: "6px 16px", borderRadius: 20, fontSize: 13, color: ds.textSecondary, fontWeight: 600 }}>
               <Calendar size={14} /> {new Date(transaction.date).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' })}
@@ -124,12 +137,12 @@ export function TransactionDetailsSheet({ transaction, onClose }: TransactionDet
         </div>
 
         {/* Footer Actions */}
-        <div style={{ background: surface, borderTop: `1px solid ${border}`, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12, zIndex: 10 }}>
-          <button onClick={handlePrint} style={{ flex: 1, height: 48, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 12, color: ds.textPrimary, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", fontFamily: "inherit" }}>
-            <Printer size={18} /> {isRTL ? "طباعة السند" : "Print Voucher"}
+        <div style={{ background: surface, borderTop: `1px solid ${border}`, padding: "20px 24px", display: "flex", alignItems: "center", gap: 16, zIndex: 10 }}>
+          <button onClick={handlePrint} style={{ flex: 1, height: 60, background: isDark ? ds.surface2 : "#F1F5F9", border: "none", borderRadius: 14, color: ds.textPrimary, fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", fontFamily: "inherit" }}>
+            <Printer size={22} /> {isRTL ? "طباعة السند" : "Print Voucher"}
           </button>
-          <button style={{ flex: 1, height: 48, background: "rgba(16,185,129,0.1)", border: "none", borderRadius: 12, color: "#10B981", fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", fontFamily: "inherit" }}>
-            <Share2 size={18} /> {isRTL ? "مشاركة" : "Share"}
+          <button style={{ flex: 1, height: 60, background: "rgba(16,185,129,0.1)", border: "none", borderRadius: 14, color: "#10B981", fontSize: 16, fontWeight: 800, display: "flex", alignItems: "center", justifyItems: "center", justifyContent: "center", gap: 10, cursor: "pointer", fontFamily: "inherit" }}>
+            <Share2 size={22} /> {isRTL ? "مشاركة" : "Share"}
           </button>
         </div>
       </motion.div>

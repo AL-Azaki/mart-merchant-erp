@@ -5,7 +5,7 @@ import { useApp } from "@/providers/AppProvider";
 import { PurchaseListScreen } from "@/features/purchases/screens/PurchaseListScreen";
 import { NewPurchaseScreen } from "@/features/purchases/screens/NewPurchaseScreen";
 import { PurchaseReturnsScreen } from "@/features/purchases/screens/PurchaseReturnsScreen";
-import { MOCK_PURCHASE_INVOICES } from "@/core/data/purchasesMockData";
+import { useFinancialStore } from "@/core/engine/useFinancialStore";
 
 interface PurchasesTabScreenProps {
   products: any[];
@@ -21,7 +21,7 @@ export function PurchasesTabScreen({
   const { isDark, isRTL, ds } = useApp();
   const [view, setView] = useState<"main" | "new">(initialAction === "new" ? "new" : "main");
   const [activeSubTab, setActiveSubTab] = useState<"invoices" | "returns">("invoices");
-  const [localInvoices, setLocalInvoices] = useState<any[]>(MOCK_PURCHASE_INVOICES);
+  const store = useFinancialStore();
 
   const bg = isDark ? ds.bg : "#F8FAFC";
   const surface = isDark ? ds.surface : "#FFFFFF";
@@ -147,7 +147,7 @@ export function PurchasesTabScreen({
                 >
                   {activeSubTab === "invoices" ? (
                     <PurchaseListScreen 
-                      invoices={localInvoices} 
+                      invoices={store.purchaseInvoices}
                       suppliers={suppliers} 
                       onNewPurchase={() => setView("new")} 
                     />
@@ -174,7 +174,6 @@ export function PurchasesTabScreen({
               products={products}
               onBack={() => setView("main")} 
               onSave={(newInvoice) => {
-                setLocalInvoices(prev => [newInvoice, ...prev]);
                 setView("main");
               }}
             />
