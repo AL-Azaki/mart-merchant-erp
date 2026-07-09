@@ -534,29 +534,69 @@ CREATE TABLE inventory_transfer_items (
 -- Description: Customers of a business (with soft delete).
 -- ------------------------------------------------------------
 CREATE TABLE customers (
-    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id   CHAR(36)        NOT NULL,
-    customer_name VARCHAR(255)    NOT NULL,
-    phone         VARCHAR(30)     NULL,
-    email         VARCHAR(255)    NULL,
-    address       TEXT            NULL,
-    credit_limit  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    is_active     BOOLEAN         NOT NULL DEFAULT TRUE,
-    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at    TIMESTAMP       NULL,
-    CONSTRAINT pk_customers PRIMARY KEY (id),
-    CONSTRAINT fk_customers_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+    business_id            CHAR(36)      NOT NULL,
+
+    customer_name          VARCHAR(255)  NOT NULL,
+    phone                  VARCHAR(30)   NULL,
+    email                  VARCHAR(255)  NULL,
+    address                TEXT          NULL,
+
+    credit_limit           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    default_currency_id    CHAR(36)      NULL,
+    payment_term_id        CHAR(36)      NULL,
+
+    opening_balance        DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    opening_balance_type   ENUM('debit', 'credit') NULL,
+    opening_balance_date   DATE          NULL,
+
+    is_active              BOOLEAN       NOT NULL DEFAULT TRUE,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_customers
+        PRIMARY KEY (id),
+
+    CONSTRAINT fk_customers_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_customers_currency
+        FOREIGN KEY (default_currency_id)
+        REFERENCES currencies(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_customers_term
+        FOREIGN KEY (payment_term_id)
+        REFERENCES payment_terms(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
     INDEX idx_customers_business_id (business_id),
     INDEX idx_customers_phone (phone),
+    INDEX idx_customers_currency_id (default_currency_id),
+    INDEX idx_customers_payment_term_id (payment_term_id),
     INDEX idx_customers_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Customer records per business.';
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Customer records per business.';
 
 -- ------------------------------------------------------------
 -- Table: channels
--- Description: Sales channels (POS, Ecommerce, Wholesale).
+-- Description: Sales channels (POS,
+
+    CONSTRAINT fk_customers_currency FOREIGN KEY (default_currency_id) REFERENCES currencies(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_customers_term FOREIGN KEY (payment_term_id) REFERENCES payment_terms(id) ON DELETE SET NULL ON UPDATE CASCADE,
+ Ecommerce, Wholesale).
 -- NOTE: Created here because orders reference channels.
 -- ------------------------------------------------------------
 CREATE TABLE channels (
@@ -575,43 +615,92 @@ CREATE TABLE channels (
 -- Description: Final sales invoice issued to a customer.
 -- ------------------------------------------------------------
 CREATE TABLE sales_invoices (
-    id              CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id     CHAR(36)        NOT NULL,
-    branch_id       CHAR(36)        NOT NULL,
-    customer_id     CHAR(36)        NULL,
-    invoice_number  VARCHAR(50)     NOT NULL,
-    invoice_date    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    due_date        TIMESTAMP       NULL,
-    sub_total       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    discount_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    tax_total       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    grand_total     DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    payment_status  ENUM('Unpaid','Partial','Paid') NOT NULL DEFAULT 'Unpaid',
-    status          ENUM('Draft','Posted','Cancelled') NOT NULL DEFAULT 'Draft',
-    notes           TEXT            NULL,
-    created_by      CHAR(36)        NOT NULL,
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at      TIMESTAMP       NULL,
-    CONSTRAINT pk_sales_invoices PRIMARY KEY (id),
-    CONSTRAINT uq_sales_invoices_number UNIQUE (business_id, invoice_number),
-    CONSTRAINT fk_sales_inv_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_sales_inv_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_sales_inv_customer FOREIGN KEY (customer_id)
-        REFERENCES customers(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_sales_inv_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                       CHAR(36)      NOT NULL DEFAULT (UUID()),
+    business_id              CHAR(36)      NOT NULL,
+    branch_id                CHAR(36)      NOT NULL,
+    customer_id              CHAR(36)      NULL,
+
+    invoice_number           VARCHAR(50)   NOT NULL,
+    invoice_date             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    due_date                 TIMESTAMP     NULL,
+
+    currency_id              CHAR(36)      NOT NULL,
+    exchange_rate            DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    sub_total                DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    discount_total           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    tax_total                DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    grand_total              DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    base_subtotal           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_discount_total      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_tax_total           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_grand_total         DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    payment_status           ENUM('Unpaid','Partial','Paid')
+                             NOT NULL DEFAULT 'Unpaid',
+
+    status                   ENUM('Draft','Posted','Cancelled')
+                             NOT NULL DEFAULT 'Draft',
+
+    notes                    TEXT          NULL,
+
+    created_by               CHAR(36)      NOT NULL,
+
+    created_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                           ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at               TIMESTAMP     NULL,
+
+    CONSTRAINT pk_sales_invoices
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_sales_invoice_number
+        UNIQUE (business_id, invoice_number),
+
+    CONSTRAINT fk_sales_inv_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_inv_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_inv_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES customers(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_inv_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_inv_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_sales_inv_business_id (business_id),
     INDEX idx_sales_inv_branch_id (branch_id),
     INDEX idx_sales_inv_customer_id (customer_id),
+    INDEX idx_sales_inv_currency_id (currency_id),
     INDEX idx_sales_inv_status (status),
     INDEX idx_sales_inv_payment_status (payment_status),
-    INDEX idx_sales_inv_date (invoice_date),
+    INDEX idx_sales_inv_invoice_date (invoice_date),
     INDEX idx_sales_inv_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Sales invoice header.';
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Sales invoice header.';
 
 -- ------------------------------------------------------------
 -- Table: orders
@@ -619,47 +708,118 @@ CREATE TABLE sales_invoices (
 --   sales_invoice_id is NULL until the order is confirmed.
 -- ------------------------------------------------------------
 CREATE TABLE orders (
-    id               CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id      CHAR(36)        NOT NULL,
-    branch_id        CHAR(36)        NOT NULL,
-    customer_id      CHAR(36)        NULL,
-    channel_id       CHAR(36)        NULL,
-    sales_invoice_id CHAR(36)        NULL COMMENT 'Populated after order is converted to invoice.',
-    order_number     VARCHAR(50)     NOT NULL,
-    order_date       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    subtotal         DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    discount_total   DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    tax_total        DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    grand_total      DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    status           ENUM('Draft','Pending','Confirmed','Processing','Ready','Completed','Cancelled')
-                     NOT NULL DEFAULT 'Draft',
-    payment_status   ENUM('Pending','Partial','Paid','Cancelled') NOT NULL DEFAULT 'Pending',
-    notes            TEXT            NULL,
-    created_by       CHAR(36)        NOT NULL,
-    created_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pk_orders PRIMARY KEY (id),
-    CONSTRAINT uq_orders_number UNIQUE (business_id, order_number),
-    CONSTRAINT fk_orders_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_orders_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id)
-        REFERENCES customers(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_orders_channel FOREIGN KEY (channel_id)
-        REFERENCES channels(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_orders_sales_invoice FOREIGN KEY (sales_invoice_id)
-        REFERENCES sales_invoices(id) ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_orders_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                       CHAR(36)      NOT NULL DEFAULT (UUID()),
+    business_id              CHAR(36)      NOT NULL,
+    branch_id                CHAR(36)      NOT NULL,
+    customer_id              CHAR(36)      NULL,
+    channel_id               CHAR(36)      NULL,
+    sales_invoice_id         CHAR(36)      NULL COMMENT 'Populated after order is converted to invoice.',
+
+    order_number             VARCHAR(50)   NOT NULL,
+    order_date               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    currency_id              CHAR(36)      NOT NULL,
+    exchange_rate            DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    subtotal                 DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    discount_total           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    tax_total                DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    grand_total              DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    base_subtotal            DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_discount_total      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_tax_total           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_grand_total         DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    status                   ENUM(
+                                'Draft',
+                                'Pending',
+                                'Confirmed',
+                                'Processing',
+                                'Ready',
+                                'Completed',
+                                'Cancelled'
+                             ) NOT NULL DEFAULT 'Draft',
+
+    payment_status           ENUM(
+                                'Pending',
+                                'Partial',
+                                'Paid',
+                                'Cancelled'
+                             ) NOT NULL DEFAULT 'Pending',
+
+    notes                    TEXT          NULL,
+
+    created_by               CHAR(36)      NOT NULL,
+
+    created_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                           ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at               TIMESTAMP     NULL,
+
+    CONSTRAINT pk_orders
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_orders_number
+        UNIQUE (business_id, order_number),
+
+    CONSTRAINT fk_orders_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_orders_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_orders_customer
+        FOREIGN KEY (customer_id)
+        REFERENCES customers(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_orders_channel
+        FOREIGN KEY (channel_id)
+        REFERENCES channels(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_orders_sales_invoice
+        FOREIGN KEY (sales_invoice_id)
+        REFERENCES sales_invoices(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_orders_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_orders_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_orders_business_id (business_id),
     INDEX idx_orders_branch_id (branch_id),
     INDEX idx_orders_customer_id (customer_id),
     INDEX idx_orders_channel_id (channel_id),
+    INDEX idx_orders_sales_invoice_id (sales_invoice_id),
+    INDEX idx_orders_currency_id (currency_id),
     INDEX idx_orders_status (status),
-    INDEX idx_orders_date (order_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Sales order header (pre-invoice stage).';
+    INDEX idx_orders_payment_status (payment_status),
+    INDEX idx_orders_order_date (order_date),
+    INDEX idx_orders_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Sales order header (pre-invoice stage).';
 
 -- ------------------------------------------------------------
 -- Table: order_items
@@ -673,7 +833,8 @@ CREATE TABLE order_items (
     unit_price       DECIMAL(18,2)   NOT NULL,
     discount_amount  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     tax_amount       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    line_total       DECIMAL(18,2)   NOT NULL,
+line_total       DECIMAL(18,2)   NOT NULL,
+base_line_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     CONSTRAINT pk_order_items PRIMARY KEY (id),
     CONSTRAINT fk_order_items_order FOREIGN KEY (order_id)
         REFERENCES orders(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -698,10 +859,11 @@ CREATE TABLE sales_invoice_items (
     cost_price       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     discount         DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     tax              DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    line_total       DECIMAL(18,2)   NOT NULL,
+line_total       DECIMAL(18,2)   NOT NULL,
+base_line_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     cost_total       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     CONSTRAINT pk_sales_invoice_items PRIMARY KEY (id),
-    CONSTRAINT fk_sales_inv_items_invoice FOREIGN KEY (sales_invoice_id)
+    CONSTRAINT fk_sales_inv_items_invoice FOREIGN KEY (sales_invoice_id),
         REFERENCES sales_invoices(id) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT fk_sales_inv_items_product_unit FOREIGN KEY (product_unit_id)
         REFERENCES product_units(id) ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -718,33 +880,82 @@ CREATE TABLE sales_invoice_items (
 -- Description: Sales return (credit note) header.
 -- ------------------------------------------------------------
 CREATE TABLE sales_returns (
-    id               CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id      CHAR(36)        NOT NULL,
-    branch_id        CHAR(36)        NOT NULL,
-    sales_invoice_id CHAR(36)        NOT NULL,
-    return_number    VARCHAR(50)     NOT NULL,
-    return_date      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total_amount     DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    status           ENUM('Draft','Posted','Cancelled') NOT NULL DEFAULT 'Draft',
-    notes            TEXT            NULL,
-    created_by       CHAR(36)        NOT NULL,
-    created_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pk_sales_returns PRIMARY KEY (id),
-    CONSTRAINT uq_sales_returns_number UNIQUE (business_id, return_number),
-    CONSTRAINT fk_sales_ret_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_sales_ret_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_sales_ret_invoice FOREIGN KEY (sales_invoice_id)
-        REFERENCES sales_invoices(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_sales_ret_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    INDEX idx_sales_ret_business_id (business_id),
-    INDEX idx_sales_ret_invoice_id (sales_invoice_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Sales return (credit note) header.';
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+    business_id            CHAR(36)      NOT NULL,
+    branch_id              CHAR(36)      NOT NULL,
+    sales_invoice_id       CHAR(36)      NOT NULL,
 
+    return_number          VARCHAR(50)   NOT NULL,
+    return_date            TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    currency_id            CHAR(36)      NOT NULL,
+    exchange_rate          DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    total_amount           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_total_amount      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    status                 ENUM(
+                               'Draft',
+                               'Posted',
+                               'Cancelled'
+                           ) NOT NULL DEFAULT 'Draft',
+
+    notes                  TEXT          NULL,
+
+    created_by             CHAR(36)      NOT NULL,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_sales_returns
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_sales_returns_number
+        UNIQUE (business_id, return_number),
+
+    CONSTRAINT fk_sales_ret_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_ret_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_ret_invoice
+        FOREIGN KEY (sales_invoice_id)
+        REFERENCES sales_invoices(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_ret_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sales_ret_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_sales_ret_business_id (business_id),
+    INDEX idx_sales_ret_invoice_id (sales_invoice_id),
+    INDEX idx_sales_ret_currency_id (currency_id),
+    INDEX idx_sales_ret_status (status),
+    INDEX idx_sales_ret_return_date (return_date),
+    INDEX idx_sales_ret_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Sales return (credit note) header.';
 -- ------------------------------------------------------------
 -- Table: sales_return_items
 -- Description: Line items of a sales return.
@@ -759,7 +970,8 @@ CREATE TABLE sales_return_items (
     unit_price            DECIMAL(18,2)   NOT NULL,
     cost_price            DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     cost_total            DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    total_price           DECIMAL(18,2)   NOT NULL,
+total_price       DECIMAL(18,2)   NOT NULL,
+base_total_price  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     CONSTRAINT pk_sales_return_items PRIMARY KEY (id),
     CONSTRAINT fk_sales_ret_items_return FOREIGN KEY (sales_return_id)
         REFERENCES sales_returns(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -785,66 +997,158 @@ CREATE TABLE sales_return_items (
 -- Description: Supplier records per business (with soft delete).
 -- ------------------------------------------------------------
 CREATE TABLE suppliers (
-    id               CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id      CHAR(36)        NOT NULL,
-    supplier_name    VARCHAR(255)    NOT NULL,
-    contact_person   VARCHAR(255)    NULL,
-    phone            VARCHAR(30)     NULL,
-    supplier_address VARCHAR(255)    NULL,
-    is_active        BOOLEAN         NOT NULL DEFAULT TRUE,
-    created_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at       TIMESTAMP       NULL,
-    CONSTRAINT pk_suppliers PRIMARY KEY (id),
-    CONSTRAINT fk_suppliers_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+    business_id            CHAR(36)      NOT NULL,
+
+    supplier_name          VARCHAR(255)  NOT NULL,
+    contact_person         VARCHAR(255)  NULL,
+    phone                  VARCHAR(30)   NULL,
+    supplier_address       VARCHAR(255)  NULL,
+
+    default_currency_id    CHAR(36)      NULL,
+    payment_term_id        CHAR(36)      NULL,
+
+    credit_limit           DECIMAL(18,2)  NULL DEFAULT 0.00,
+
+    opening_balance        DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    opening_balance_type   ENUM('debit','credit') NULL,
+    opening_balance_date   DATE          NULL,
+
+    is_active              BOOLEAN       NOT NULL DEFAULT TRUE,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_suppliers
+        PRIMARY KEY (id),
+
+    CONSTRAINT fk_suppliers_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_suppliers_currency
+        FOREIGN KEY (default_currency_id)
+        REFERENCES currencies(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_suppliers_term
+        FOREIGN KEY (payment_term_id)
+        REFERENCES payment_terms(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
     INDEX idx_suppliers_business_id (business_id),
+    INDEX idx_suppliers_phone (phone),
+    INDEX idx_suppliers_currency_id (default_currency_id),
+    INDEX idx_suppliers_payment_term_id (payment_term_id),
     INDEX idx_suppliers_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Supplier records per business.';
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Supplier records per business.';
 
 -- ------------------------------------------------------------
 -- Table: purchase_invoices
 -- Description: Purchase invoice from a supplier.
 -- ------------------------------------------------------------
 CREATE TABLE purchase_invoices (
-    id              CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id     CHAR(36)        NOT NULL,
-    branch_id       CHAR(36)        NOT NULL,
-    supplier_id     CHAR(36)        NOT NULL,
-    warehouse_id    CHAR(36)        NOT NULL COMMENT 'Default receiving warehouse.',
-    invoice_number  VARCHAR(50)     NOT NULL,
-    purchase_date   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    due_date        TIMESTAMP       NULL,
-    sub_total       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    discount_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    tax_total       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    grand_total     DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    status          ENUM('Draft','Posted','Cancelled') NOT NULL DEFAULT 'Draft',
-    notes           TEXT            NULL,
-    created_by      CHAR(36)        NOT NULL,
-    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at      TIMESTAMP       NULL,
-    CONSTRAINT pk_purchase_invoices PRIMARY KEY (id),
-    CONSTRAINT uq_purchase_invoices_number UNIQUE (business_id, invoice_number),
-    CONSTRAINT fk_pur_inv_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_inv_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_inv_supplier FOREIGN KEY (supplier_id)
-        REFERENCES suppliers(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_inv_warehouse FOREIGN KEY (warehouse_id)
-        REFERENCES warehouses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_inv_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                       CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id              CHAR(36)      NOT NULL,
+    branch_id                CHAR(36)      NOT NULL,
+    supplier_id              CHAR(36)      NOT NULL,
+    warehouse_id             CHAR(36)      NOT NULL COMMENT 'Default receiving warehouse.',
+
+    invoice_number           VARCHAR(50)   NOT NULL,
+    purchase_date            TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    due_date                 TIMESTAMP     NULL,
+
+    currency_id              CHAR(36)      NOT NULL,
+    exchange_rate            DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    sub_total                DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    discount_total           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    tax_total                DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    grand_total              DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    base_subtotal          DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_discount_total      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_tax_total           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_grand_total         DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    status                   ENUM('Draft','Posted','Cancelled')
+                             NOT NULL DEFAULT 'Draft',
+
+    notes                    TEXT          NULL,
+
+    created_by               CHAR(36)      NOT NULL,
+
+    created_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                           ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at               TIMESTAMP     NULL,
+
+    CONSTRAINT pk_purchase_invoices
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_purchase_invoices_number
+        UNIQUE (business_id, invoice_number),
+
+    CONSTRAINT fk_pur_inv_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_inv_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_inv_supplier
+        FOREIGN KEY (supplier_id)
+        REFERENCES suppliers(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_inv_warehouse
+        FOREIGN KEY (warehouse_id)
+        REFERENCES warehouses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_inv_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_inv_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_pur_inv_business_id (business_id),
     INDEX idx_pur_inv_branch_id (branch_id),
     INDEX idx_pur_inv_supplier_id (supplier_id),
+    INDEX idx_pur_inv_warehouse_id (warehouse_id),
+    INDEX idx_pur_inv_currency_id (currency_id),
     INDEX idx_pur_inv_status (status),
-    INDEX idx_pur_inv_date (purchase_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Purchase invoice header.';
+    INDEX idx_pur_inv_purchase_date (purchase_date),
+    INDEX idx_pur_inv_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Purchase invoice header.';
 
 -- ------------------------------------------------------------
 -- Table: purchase_invoice_items
@@ -858,7 +1162,8 @@ CREATE TABLE purchase_invoice_items (
     unit_price          DECIMAL(18,2)   NOT NULL,
     discount            DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     tax                 DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    line_total          DECIMAL(18,2)   NOT NULL,
+line_total       DECIMAL(18,2)   NOT NULL,
+base_line_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     CONSTRAINT pk_purchase_invoice_items PRIMARY KEY (id),
     CONSTRAINT fk_pur_inv_items_invoice FOREIGN KEY (purchase_invoice_id)
         REFERENCES purchase_invoices(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -875,32 +1180,80 @@ CREATE TABLE purchase_invoice_items (
 -- Table: purchase_returns
 -- ------------------------------------------------------------
 CREATE TABLE purchase_returns (
-    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id         CHAR(36)        NOT NULL,
-    branch_id           CHAR(36)        NOT NULL,
-    purchase_invoice_id CHAR(36)        NOT NULL,
-    return_number       VARCHAR(50)     NOT NULL,
-    return_date         TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    total_amount        DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    status              ENUM('Draft','Posted','Cancelled') NOT NULL DEFAULT 'Draft',
-    notes               TEXT            NULL,
-    created_by          CHAR(36)        NOT NULL,
-    created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pk_purchase_returns PRIMARY KEY (id),
-    CONSTRAINT uq_purchase_returns_number UNIQUE (business_id, return_number),
-    CONSTRAINT fk_pur_ret_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_ret_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_ret_invoice FOREIGN KEY (purchase_invoice_id)
-        REFERENCES purchase_invoices(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_pur_ret_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id            CHAR(36)      NOT NULL,
+    branch_id              CHAR(36)      NOT NULL,
+    purchase_invoice_id    CHAR(36)      NOT NULL,
+
+    return_number          VARCHAR(50)   NOT NULL,
+    return_date            TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    currency_id            CHAR(36)      NOT NULL,
+    exchange_rate          DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    total_amount           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_total_amount      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    status                 ENUM('Draft','Posted','Cancelled')
+                           NOT NULL DEFAULT 'Draft',
+
+    notes                  TEXT          NULL,
+
+    created_by             CHAR(36)      NOT NULL,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_purchase_returns
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_purchase_returns_number
+        UNIQUE (business_id, return_number),
+
+    CONSTRAINT fk_pur_ret_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_ret_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_ret_invoice
+        FOREIGN KEY (purchase_invoice_id)
+        REFERENCES purchase_invoices(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_ret_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_pur_ret_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_pur_ret_business_id (business_id),
-    INDEX idx_pur_ret_invoice_id (purchase_invoice_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Purchase return header.';
+    INDEX idx_pur_ret_invoice_id (purchase_invoice_id),
+    INDEX idx_pur_ret_currency_id (currency_id),
+    INDEX idx_pur_ret_status (status),
+    INDEX idx_pur_ret_return_date (return_date),
+    INDEX idx_pur_ret_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Purchase return header.';
 
 -- ------------------------------------------------------------
 -- Table: purchase_return_items
@@ -912,7 +1265,8 @@ CREATE TABLE purchase_return_items (
     warehouse_id       CHAR(36)        NOT NULL,
     quantity           DECIMAL(18,3)   NOT NULL,
     unit_price         DECIMAL(18,2)   NOT NULL,
-    line_total         DECIMAL(18,2)   NOT NULL,
+line_total       DECIMAL(18,2)   NOT NULL,
+base_line_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     CONSTRAINT pk_purchase_return_items PRIMARY KEY (id),
     CONSTRAINT fk_pur_ret_items_return FOREIGN KEY (purchase_return_id)
         REFERENCES purchase_returns(id) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -1060,111 +1414,257 @@ CREATE TABLE chart_of_accounts (
 --   reference_type links to the source document (polymorphic).
 -- ------------------------------------------------------------
 CREATE TABLE journal_entries (
-    id               CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id      CHAR(36)        NOT NULL,
-    fiscal_year_id   CHAR(36)        NOT NULL,
-    fiscal_period_id CHAR(36)        NOT NULL,
-    journal_number   VARCHAR(50)     NOT NULL,
-    journal_date     DATE            NOT NULL,
-    reference_type   ENUM(
-                         'SalesInvoice','SalesReturn',
-                         'PurchaseInvoice','PurchaseReturn',
-                         'Payment','Expense','Manual'
-                     ) NOT NULL,
-    reference_id     CHAR(36)        NOT NULL COMMENT 'Polymorphic FK — no DB constraint (varies by reference_type).',
-    status           ENUM('Draft','Posted','Reversed') NOT NULL DEFAULT 'Draft',
-    notes            TEXT            NULL,
-    created_by       CHAR(36)        NOT NULL,
-    created_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pk_journal_entries PRIMARY KEY (id),
-    CONSTRAINT uq_journal_entries_number UNIQUE (business_id, journal_number),
-    CONSTRAINT fk_je_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_je_fiscal_year FOREIGN KEY (fiscal_year_id)
-        REFERENCES fiscal_years(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_je_fiscal_period FOREIGN KEY (fiscal_period_id)
-        REFERENCES fiscal_periods(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_je_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                   CHAR(36)      NOT NULL DEFAULT (UUID()),
+    business_id          CHAR(36)      NOT NULL,
+    fiscal_year_id       CHAR(36)      NOT NULL,
+    fiscal_period_id     CHAR(36)      NOT NULL,
+
+    journal_number       VARCHAR(50)   NOT NULL,
+    journal_date         DATE          NOT NULL,
+
+    currency_id          CHAR(36)      NOT NULL,
+    exchange_rate        DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    reference_type       ENUM(
+                             'SalesInvoice',
+                             'SalesReturn',
+                             'PurchaseInvoice',
+                             'PurchaseReturn',
+                             'Payment',
+                             'Expense',
+                             'Manual',
+                             'StockAdjustment',
+                             'ClosingEntry'
+                         ) NOT NULL,
+
+    reference_id         CHAR(36)      NOT NULL
+                         COMMENT 'Polymorphic reference. Valid table depends on reference_type.',
+
+    status               ENUM(
+                             'Draft',
+                             'Posted',
+                             'Reversed'
+                         ) NOT NULL DEFAULT 'Draft',
+
+    notes                TEXT          NULL,
+
+    created_by           CHAR(36)      NOT NULL,
+
+    created_at           TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                       ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at           TIMESTAMP     NULL,
+
+    CONSTRAINT pk_journal_entries
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_journal_entries_number
+        UNIQUE (business_id, journal_number),
+
+    CONSTRAINT fk_je_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_je_fiscal_year
+        FOREIGN KEY (fiscal_year_id)
+        REFERENCES fiscal_years(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_je_fiscal_period
+        FOREIGN KEY (fiscal_period_id)
+        REFERENCES fiscal_periods(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_je_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_je_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_je_business_id (business_id),
     INDEX idx_je_fiscal_year_id (fiscal_year_id),
     INDEX idx_je_fiscal_period_id (fiscal_period_id),
+    INDEX idx_je_currency_id (currency_id),
     INDEX idx_je_date (journal_date),
-    INDEX idx_je_reference (reference_type, reference_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Journal entry header. Debits must equal Credits per entry.';
+    INDEX idx_je_reference (reference_type, reference_id),
+    INDEX idx_je_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Journal entry header. Debits must equal credits for every journal entry.';
 
 -- ------------------------------------------------------------
 -- Table: journal_entry_lines
 -- Description: Debit/Credit lines of a journal entry.
 -- ------------------------------------------------------------
 CREATE TABLE journal_entry_lines (
-    id                   CHAR(36)        NOT NULL DEFAULT (UUID()),
-    journal_entry_id     CHAR(36)        NOT NULL,
-    chart_of_account_id  CHAR(36)        NOT NULL,
-    line_number          INT             NOT NULL,
-    debit_amount         DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    credit_amount        DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    description          TEXT            NULL,
-    CONSTRAINT pk_journal_entry_lines PRIMARY KEY (id),
-    CONSTRAINT fk_jel_journal_entry FOREIGN KEY (journal_entry_id)
-        REFERENCES journal_entries(id) ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_jel_chart_of_account FOREIGN KEY (chart_of_account_id)
-        REFERENCES chart_of_accounts(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    journal_entry_id       CHAR(36)      NOT NULL,
+    chart_of_account_id    CHAR(36)      NOT NULL,
+
+    line_number            INT           NOT NULL,
+
+    debit_amount           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    credit_amount          DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    base_debit_amount      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_credit_amount     DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    description            TEXT          NULL,
+
+    CONSTRAINT pk_journal_entry_lines
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_jel_line
+        UNIQUE (journal_entry_id, line_number),
+
+    CONSTRAINT fk_jel_journal_entry
+        FOREIGN KEY (journal_entry_id)
+        REFERENCES journal_entries(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_jel_chart_of_account
+        FOREIGN KEY (chart_of_account_id)
+        REFERENCES chart_of_accounts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_jel_journal_entry_id (journal_entry_id),
     INDEX idx_jel_chart_of_account_id (chart_of_account_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Journal entry lines (debit/credit ledger).';
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Journal entry lines (debit/credit ledger).';
 
 -- ------------------------------------------------------------
 -- Table: payments
 -- Description: All financial receipts and disbursements.
 -- ------------------------------------------------------------
 CREATE TABLE payments (
-    id                   CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id          CHAR(36)        NOT NULL,
-    branch_id            CHAR(36)        NOT NULL,
-    payment_method_id    CHAR(36)        NOT NULL,
-    currency_id          CHAR(36)        NOT NULL,
-    chart_of_account_id  CHAR(36)        NOT NULL COMMENT 'Cash/Bank account in COA.',
-    payment_number       VARCHAR(50)     NOT NULL,
-    payment_type         ENUM('Receipt','Payment','Refund','Adjustment','Transfer') NOT NULL,
-    reference_type       ENUM(
-                             'SalesInvoice','PurchaseInvoice',
-                             'SalesReturn','PurchaseReturn','Expense','Other'
-                         ) NOT NULL,
-    reference_id         CHAR(36)        NOT NULL,
-    reference_number     VARCHAR(50)     NULL,
-    amount               DECIMAL(18,2)   NOT NULL,
-    payment_date         TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status               ENUM('Draft','Posted','Cancelled') NOT NULL DEFAULT 'Draft',
-    notes                TEXT            NULL,
-    created_by           CHAR(36)        NOT NULL,
-    created_at           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pk_payments PRIMARY KEY (id),
-    CONSTRAINT uq_payments_number UNIQUE (business_id, payment_number),
-    CONSTRAINT fk_payments_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_payments_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_payments_method FOREIGN KEY (payment_method_id)
-        REFERENCES payment_methods(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_payments_currency FOREIGN KEY (currency_id)
-        REFERENCES currencies(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_payments_coa FOREIGN KEY (chart_of_account_id)
-        REFERENCES chart_of_accounts(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_payments_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id            CHAR(36)      NOT NULL,
+    branch_id              CHAR(36)      NOT NULL,
+
+    payment_method_id      CHAR(36)      NOT NULL,
+    currency_id            CHAR(36)      NOT NULL,
+    exchange_rate          DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    chart_of_account_id    CHAR(36)      NOT NULL
+                           COMMENT 'Cash/Bank account in Chart of Accounts.',
+
+    payment_number         VARCHAR(50)   NOT NULL,
+
+    payment_type           ENUM(
+                               'Receipt',
+                               'Payment',
+                               'Refund',
+                               'Adjustment',
+                               'Transfer'
+                           ) NOT NULL,
+
+    reference_type         ENUM(
+                               'SalesInvoice',
+                               'PurchaseInvoice',
+                               'SalesReturn',
+                               'PurchaseReturn',
+                               'Expense',
+                               'Other'
+                           ) NOT NULL,
+
+    reference_id           CHAR(36)      NULL,
+    reference_number       VARCHAR(50)   NULL,
+
+    amount                 DECIMAL(18,2) NOT NULL,
+    base_amount            DECIMAL(18,2) NOT NULL,
+
+    payment_date           TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    status                 ENUM(
+                               'Draft',
+                               'Posted',
+                               'Cancelled'
+                           ) NOT NULL DEFAULT 'Draft',
+
+    notes                  TEXT          NULL,
+
+    created_by             CHAR(36)      NOT NULL,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_payments
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_payments_number
+        UNIQUE (business_id, payment_number),
+
+    CONSTRAINT fk_payments_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_payments_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_payments_method
+        FOREIGN KEY (payment_method_id)
+        REFERENCES payment_methods(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_payments_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_payments_coa
+        FOREIGN KEY (chart_of_account_id)
+        REFERENCES chart_of_accounts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_payments_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_payments_business_id (business_id),
     INDEX idx_payments_branch_id (branch_id),
     INDEX idx_payments_method_id (payment_method_id),
+    INDEX idx_payments_currency_id (currency_id),
+    INDEX idx_payments_chart_of_account_id (chart_of_account_id),
     INDEX idx_payments_reference (reference_type, reference_id),
     INDEX idx_payments_date (payment_date),
-    INDEX idx_payments_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='All financial receipts and disbursements.';
+    INDEX idx_payments_status (status),
+    INDEX idx_payments_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='All financial receipts and disbursements.';
 
 -- ------------------------------------------------------------
 -- Table: expense_categories
@@ -1187,66 +1687,162 @@ CREATE TABLE expense_categories (
 -- Description: Administrative / operational expenses.
 -- ------------------------------------------------------------
 CREATE TABLE expenses (
-    id                CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id       CHAR(36)        NOT NULL,
-    branch_id         CHAR(36)        NOT NULL,
-    category_id       CHAR(36)        NOT NULL,
-    payment_method_id CHAR(36)        NOT NULL,
-    amount            DECIMAL(18,2)   NOT NULL,
-    expense_date      DATE            NOT NULL,
-    description       TEXT            NULL,
-    status            ENUM('Draft','Posted','Cancelled') NOT NULL DEFAULT 'Draft',
-    created_by        CHAR(36)        NOT NULL,
-    created_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT pk_expenses PRIMARY KEY (id),
-    CONSTRAINT fk_expenses_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_expenses_branch FOREIGN KEY (branch_id)
-        REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_expenses_category FOREIGN KEY (category_id)
-        REFERENCES expense_categories(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_expenses_payment_method FOREIGN KEY (payment_method_id)
-        REFERENCES payment_methods(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_expenses_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id            CHAR(36)      NOT NULL,
+    branch_id              CHAR(36)      NOT NULL,
+
+    category_id            CHAR(36)      NOT NULL,
+    payment_method_id      CHAR(36)      NOT NULL,
+
+    currency_id            CHAR(36)      NOT NULL,
+    exchange_rate          DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    amount                 DECIMAL(18,2) NOT NULL,
+    base_amount            DECIMAL(18,2) NOT NULL,
+
+    expense_date           DATE          NOT NULL,
+
+    description            TEXT          NULL,
+
+    status                 ENUM(
+                               'Draft',
+                               'Posted',
+                               'Cancelled'
+                           ) NOT NULL DEFAULT 'Draft',
+
+    created_by             CHAR(36)      NOT NULL,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_expenses
+        PRIMARY KEY (id),
+
+    CONSTRAINT fk_expenses_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_expenses_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_expenses_category
+        FOREIGN KEY (category_id)
+        REFERENCES expense_categories(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_expenses_payment_method
+        FOREIGN KEY (payment_method_id)
+        REFERENCES payment_methods(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_expenses_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_expenses_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
     INDEX idx_expenses_business_id (business_id),
     INDEX idx_expenses_branch_id (branch_id),
     INDEX idx_expenses_category_id (category_id),
-    INDEX idx_expenses_date (expense_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Operational and administrative expenses.';
+    INDEX idx_expenses_payment_method_id (payment_method_id),
+    INDEX idx_expenses_currency_id (currency_id),
+    INDEX idx_expenses_status (status),
+    INDEX idx_expenses_date (expense_date),
+    INDEX idx_expenses_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Operational and administrative expenses.';
 
 -- ------------------------------------------------------------
 -- Table: opening_balances
 -- Description: Opening balances per account per fiscal year.
 -- ------------------------------------------------------------
 CREATE TABLE opening_balances (
-    id                  CHAR(36)        NOT NULL DEFAULT (UUID()),
-    business_id         CHAR(36)        NOT NULL,
-    fiscal_year_id      CHAR(36)        NOT NULL,
-    chart_of_account_id CHAR(36)        NOT NULL,
-    currency_id         CHAR(36)        NOT NULL,
-    debit_amount        DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    credit_amount       DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
-    created_by          CHAR(36)        NOT NULL,
-    created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_opening_balances PRIMARY KEY (id),
-    CONSTRAINT uq_opening_balances UNIQUE (fiscal_year_id, chart_of_account_id),
-    CONSTRAINT fk_ob_business FOREIGN KEY (business_id)
-        REFERENCES businesses(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_ob_fiscal_year FOREIGN KEY (fiscal_year_id)
-        REFERENCES fiscal_years(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_ob_chart_of_account FOREIGN KEY (chart_of_account_id)
-        REFERENCES chart_of_accounts(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_ob_currency FOREIGN KEY (currency_id)
-        REFERENCES currencies(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_ob_created_by FOREIGN KEY (created_by)
-        REFERENCES users(id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id            CHAR(36)      NOT NULL,
+    fiscal_year_id         CHAR(36)      NOT NULL,
+    chart_of_account_id    CHAR(36)      NOT NULL,
+
+    currency_id            CHAR(36)      NOT NULL,
+    exchange_rate          DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    debit_amount           DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    credit_amount          DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    base_debit_amount      DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+    base_credit_amount     DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    created_by             CHAR(36)      NOT NULL,
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_opening_balances
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_opening_balances
+        UNIQUE (
+            business_id,
+            fiscal_year_id,
+            chart_of_account_id
+        ),
+
+    CONSTRAINT fk_ob_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_ob_fiscal_year
+        FOREIGN KEY (fiscal_year_id)
+        REFERENCES fiscal_years(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_ob_chart_of_account
+        FOREIGN KEY (chart_of_account_id)
+        REFERENCES chart_of_accounts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_ob_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_ob_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_ob_business_id (business_id),
     INDEX idx_ob_fiscal_year_id (fiscal_year_id),
-    INDEX idx_ob_coa_id (chart_of_account_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-  COMMENT='Opening balances per account per fiscal year.';
+    INDEX idx_ob_coa_id (chart_of_account_id),
+    INDEX idx_ob_currency_id (currency_id)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Opening balances per account per fiscal year.';
 
 -- ======================================================================
 -- DOMAIN 8 — SALES CHANNEL
@@ -1304,6 +1900,7 @@ CREATE TABLE cart_items (
     quantity         DECIMAL(18,3)   NOT NULL,
     unit_price       DECIMAL(18,2)   NOT NULL,
     line_total       DECIMAL(18,2)   NOT NULL,
+    base_line_total  DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
     created_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_cart_items PRIMARY KEY (id),
     CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id)
@@ -1365,10 +1962,372 @@ CREATE TABLE sequences (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Auto-increment document numbering per business/branch/type.';
 
+
 -- ======================================================================
--- RE-ENABLE FOREIGN KEY CHECKS
+-- DOMAIN 10 — HR & EMPLOYEES
 -- ======================================================================
-SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE departments (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    business_id   CHAR(36)        NOT NULL,
+    department_name VARCHAR(150)  NOT NULL,
+    description   TEXT            NULL,
+    is_active     BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT pk_departments PRIMARY KEY (id),
+    CONSTRAINT fk_departments_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Departments within a business.';
+
+CREATE TABLE job_titles (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    business_id   CHAR(36)        NOT NULL,
+    job_title     VARCHAR(150)    NOT NULL,
+    description   TEXT            NULL,
+    is_active     BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT pk_job_titles PRIMARY KEY (id),
+    CONSTRAINT fk_job_titles_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Job titles within a business.';
+
+CREATE TABLE employees (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    business_id   CHAR(36)        NOT NULL,
+    user_id       CHAR(36)        NULL COMMENT 'Linked user account for login',
+    department_id CHAR(36)        NULL,
+    job_title_id  CHAR(36)        NULL,
+    branch_id     CHAR(36)        NOT NULL,
+    first_name    VARCHAR(100)    NOT NULL,
+    last_name     VARCHAR(100)    NOT NULL,
+    phone         VARCHAR(30)     NULL,
+    email         VARCHAR(255)    NULL,
+    hire_date     DATE            NOT NULL,
+    salary        DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    is_active     BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at    TIMESTAMP       NULL,
+    CONSTRAINT pk_employees PRIMARY KEY (id),
+    CONSTRAINT fk_employees_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_employees_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_employees_department FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_employees_job FOREIGN KEY (job_title_id) REFERENCES job_titles(id) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT fk_employees_branch FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Employee records.';
+
+CREATE TABLE employee_documents (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    employee_id   CHAR(36)        NOT NULL,
+    document_type VARCHAR(100)    NOT NULL,
+    file_path     VARCHAR(500)    NOT NULL,
+    uploaded_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_employee_documents PRIMARY KEY (id),
+    CONSTRAINT fk_employee_documents_emp FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Employee documents and attachments.';
+
+-- ======================================================================
+-- DOMAIN 11 — EXTENDED FEATURES
+-- ======================================================================
+
+CREATE TABLE payment_terms (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    business_id   CHAR(36)        NOT NULL,
+    term_name     VARCHAR(100)    NOT NULL,
+    days_to_due   INT             NOT NULL DEFAULT 0,
+    is_active     BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_payment_terms PRIMARY KEY (id),
+    CONSTRAINT fk_payment_terms_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Payment terms for customers/suppliers.';
+
+CREATE TABLE taxes (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    business_id   CHAR(36)        NOT NULL,
+    tax_name      VARCHAR(100)    NOT NULL,
+    tax_rate      DECIMAL(5,2)    NOT NULL COMMENT 'Percentage (e.g. 15.00)',
+    is_active     BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT pk_taxes PRIMARY KEY (id),
+    CONSTRAINT fk_taxes_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Tax definitions.';
+
+CREATE TABLE product_taxes (
+    product_id    CHAR(36)        NOT NULL,
+    tax_id        CHAR(36)        NOT NULL,
+    CONSTRAINT pk_product_taxes PRIMARY KEY (product_id, tax_id),
+    CONSTRAINT fk_product_taxes_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_product_taxes_tax FOREIGN KEY (tax_id) REFERENCES taxes(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mapping products to taxes.';
+
+CREATE TABLE product_variants (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    product_id    CHAR(36)        NOT NULL,
+    variant_name  VARCHAR(100)    NOT NULL COMMENT 'e.g. Size, Color',
+    variant_value VARCHAR(100)    NOT NULL COMMENT 'e.g. XL, Red',
+    CONSTRAINT pk_product_variants PRIMARY KEY (id),
+    CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Product variants (size, color, etc).';
+
+CREATE TABLE stock_adjustments (
+    id                     CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id            CHAR(36)      NOT NULL,
+    warehouse_id           CHAR(36)      NOT NULL,
+
+    adjustment_number      VARCHAR(50)   NOT NULL,
+    adjustment_date        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    adjustment_type        ENUM(
+                               'Increase',
+                               'Decrease',
+                               'Damage',
+                               'Loss'
+                           ) NOT NULL,
+
+    status                 ENUM(
+                               'Draft',
+                               'Posted'
+                           ) NOT NULL DEFAULT 'Draft',
+
+    notes                  TEXT          NULL,
+
+    created_by             CHAR(36)      NOT NULL,
+
+    created_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at             TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at             TIMESTAMP     NULL,
+
+    CONSTRAINT pk_stock_adjustments
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_stock_adjustments_number
+        UNIQUE (business_id, adjustment_number),
+
+    CONSTRAINT fk_stock_adj_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_stock_adj_warehouse
+        FOREIGN KEY (warehouse_id)
+        REFERENCES warehouses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_stock_adj_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_stock_adj_business_id (business_id),
+    INDEX idx_stock_adj_warehouse_id (warehouse_id),
+    INDEX idx_stock_adj_adjustment_date (adjustment_date),
+    INDEX idx_stock_adj_status (status),
+    INDEX idx_stock_adj_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Header for physical count and stock adjustments.';
+
+CREATE TABLE stock_adjustment_items (
+    id                CHAR(36)        NOT NULL DEFAULT (UUID()),
+    adjustment_id     CHAR(36)        NOT NULL,
+    product_unit_id   CHAR(36)        NOT NULL,
+    system_qty        DECIMAL(18,3)   NOT NULL,
+    physical_qty      DECIMAL(18,3)   NOT NULL,
+    diff_qty          DECIMAL(18,3)   NOT NULL,
+    unit_cost         DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    total_cost        DECIMAL(18,2)   NOT NULL DEFAULT 0.00,
+    CONSTRAINT pk_stock_adjustment_items PRIMARY KEY (id),
+    CONSTRAINT fk_stock_adj_items_adj FOREIGN KEY (adjustment_id) REFERENCES stock_adjustments(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_stock_adj_items_product FOREIGN KEY (product_unit_id) REFERENCES product_units(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Line items for stock adjustments.';
+
+CREATE TABLE attachments (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    entity_type   VARCHAR(100)    NOT NULL COMMENT 'e.g. Customer, Supplier, SalesInvoice',
+    entity_id     CHAR(36)        NOT NULL,
+    file_path     VARCHAR(500)    NOT NULL,
+    file_name     VARCHAR(255)    NULL,
+    uploaded_at   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_attachments PRIMARY KEY (id),
+    INDEX idx_attachments_entity (entity_type, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Polymorphic attachments for various entities.';
+
+CREATE TABLE activity_logs (
+    id            CHAR(36)        NOT NULL DEFAULT (UUID()),
+    business_id   CHAR(36)        NOT NULL,
+    user_id       CHAR(36)        NOT NULL,
+    action        VARCHAR(100)    NOT NULL,
+    entity_type   VARCHAR(100)    NOT NULL,
+    entity_id     CHAR(36)        NOT NULL,
+    details       JSON            NULL,
+    created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_activity_logs PRIMARY KEY (id),
+    CONSTRAINT fk_activity_logs_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_activity_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_activity_logs_entity (entity_type, entity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='System activity logs for auditing.';
+
+CREATE TABLE fixed_assets (
+    id                       CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id              CHAR(36)      NOT NULL,
+    branch_id                CHAR(36)      NOT NULL,
+
+    asset_name               VARCHAR(255)  NOT NULL,
+    asset_code               VARCHAR(50)   NOT NULL,
+
+    purchase_date            DATE          NOT NULL,
+
+    currency_id              CHAR(36)      NOT NULL,
+    exchange_rate            DECIMAL(18,8) NOT NULL DEFAULT 1.00000000,
+
+    purchase_price           DECIMAL(18,2) NOT NULL,
+    current_value            DECIMAL(18,2) NOT NULL,
+
+    base_purchase_price      DECIMAL(18,2) NOT NULL,
+    base_current_value       DECIMAL(18,2) NOT NULL,
+
+    depreciation_rate        DECIMAL(5,2)  NOT NULL DEFAULT 0.00,
+
+    status                   ENUM(
+                                 'Active',
+                                 'Disposed',
+                                 'Depreciated'
+                             ) NOT NULL DEFAULT 'Active',
+
+    created_by               CHAR(36)      NOT NULL,
+
+    created_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                           ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at               TIMESTAMP     NULL,
+
+    CONSTRAINT pk_fixed_assets
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_fixed_assets_code
+        UNIQUE (business_id, asset_code),
+
+    CONSTRAINT fk_fixed_assets_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_fixed_assets_branch
+        FOREIGN KEY (branch_id)
+        REFERENCES branches(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_fixed_assets_currency
+        FOREIGN KEY (currency_id)
+        REFERENCES currencies(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_fixed_assets_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_fixed_assets_business_id (business_id),
+    INDEX idx_fixed_assets_branch_id (branch_id),
+    INDEX idx_fixed_assets_currency_id (currency_id),
+    INDEX idx_fixed_assets_status (status),
+    INDEX idx_fixed_assets_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Fixed assets registry.';
+
+CREATE TABLE bank_reconciliations (
+    id                    CHAR(36)      NOT NULL DEFAULT (UUID()),
+
+    business_id           CHAR(36)      NOT NULL,
+    chart_of_account_id   CHAR(36)      NOT NULL
+                          COMMENT 'Bank account in the Chart of Accounts.',
+
+    statement_date        DATE          NOT NULL,
+
+    statement_balance     DECIMAL(18,2) NOT NULL,
+    system_balance        DECIMAL(18,2) NOT NULL,
+    difference            DECIMAL(18,2) NOT NULL DEFAULT 0.00,
+
+    status                ENUM(
+                              'Draft',
+                              'Completed'
+                          ) NOT NULL DEFAULT 'Draft',
+
+    created_by            CHAR(36)      NOT NULL,
+
+    created_at            TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at            TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                       ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at            TIMESTAMP     NULL,
+
+    CONSTRAINT pk_bank_reconciliations
+        PRIMARY KEY (id),
+
+    CONSTRAINT uq_bank_reconciliation
+        UNIQUE (
+            business_id,
+            chart_of_account_id,
+            statement_date
+        ),
+
+    CONSTRAINT fk_bank_recon_business
+        FOREIGN KEY (business_id)
+        REFERENCES businesses(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_bank_recon_coa
+        FOREIGN KEY (chart_of_account_id)
+        REFERENCES chart_of_accounts(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_bank_recon_created_by
+        FOREIGN KEY (created_by)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_bank_recon_business_id (business_id),
+    INDEX idx_bank_recon_coa_id (chart_of_account_id),
+    INDEX idx_bank_recon_statement_date (statement_date),
+    INDEX idx_bank_recon_status (status),
+    INDEX idx_bank_recon_deleted_at (deleted_at)
+
+) ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci
+COMMENT='Bank reconciliation headers.';
+
+CREATE TABLE bank_reconciliation_lines (
+    id                     CHAR(36)        NOT NULL DEFAULT (UUID()),
+    bank_reconciliation_id CHAR(36)        NOT NULL,
+    payment_id             CHAR(36)        NOT NULL,
+    is_cleared             BOOLEAN         NOT NULL DEFAULT FALSE,
+    cleared_date           DATE            NULL,
+    CONSTRAINT pk_bank_reconciliation_lines PRIMARY KEY (id),
+    CONSTRAINT fk_bank_recon_lines_recon FOREIGN KEY (bank_reconciliation_id) REFERENCES bank_reconciliations(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_bank_recon_lines_payment FOREIGN KEY (payment_id) REFERENCES payments(id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Bank reconciliation lines linking to payments.';
+
+
+
 
 -- ======================================================================
 -- END OF SCHEMA
